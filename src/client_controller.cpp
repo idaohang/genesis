@@ -108,6 +108,9 @@ client_controller::error_type client_controller::add_station (station st) {
         if (has_base ()) {
             return make_error_condition (base_already_set);
         }
+        if (rovers_.find (st) != boost::end (rovers_)) {
+            return make_error_condition (station_exists);
+        }
 
         // TODO: Kick off base station receiver
         swap (base_, boost::move (st));
