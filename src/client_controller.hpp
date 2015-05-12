@@ -34,32 +34,50 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/move/core.hpp>
+#include <boost/system/error_code.hpp>
+#include <set>
+#include "station.hpp"
 
 namespace genesis {
-   class client_controller;
-   typedef boost::shared_ptr <client_controller> client_controller_ptr;
 
-   /*!
-    * Construct a new client controller.
-    */
-   client_controller_ptr make_client_controller ();
+class station;
 
-   /*!
-    * \brief This class keeps track of which clients are connected
-    *  and what kind of client they are.
-    */
-   class client_controller {
-   private:
-      BOOST_MOVABLE_BUT_NOT_COPYABLE (client_controller);
+class client_controller;
+typedef boost::shared_ptr <client_controller> client_controller_ptr;
 
-      client_controller ();
-      friend client_controller_ptr make_client_controller ();
-   public:
-      ~client_controller ();
+/*!
+ * Construct a new client controller.
+ */
+client_controller_ptr make_client_controller ();
 
-   private:
+/*!
+ * \brief This class keeps track of which clients are connected
+ *  and what kind of client they are.
+ */
+class client_controller {
+public:
+   typedef boost::system::error_condition error_type;
+private:
+   BOOST_MOVABLE_BUT_NOT_COPYABLE (client_controller)
 
-   };
+   client_controller ();
+   friend client_controller_ptr make_client_controller ();
+public:
+   ~client_controller ();
+
+   error_type add_station (station st);
+
+   error_type remove_station (const std::string &name);
+
+   bool has_base () const;
+
+   error_type reset_base ();
+
+private:
+
+   station base_;
+   std::set<station> rovers_;
+};
 
 }
 

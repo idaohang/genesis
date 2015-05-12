@@ -1,6 +1,6 @@
 /*!
- * \file main.cpp
- * \brief Genesis main line.
+ * \file log.cpp
+ * \brief Set up logging.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,33 +26,25 @@
  *
  * -------------------------------------------------------------------------
  */
+#define BOOST_LOG_DYN_LINK 1
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/expressions/attr.hpp>
 
-#include "client_controller.hpp"
-#include "udp_multicast_listener.hpp"
-#include "log.hpp"
+namespace genesis {
 
-enum {
-    GENESIS_PORT = 6951
-};
+using namespace boost::log;
 
-int main () {
-    genesis::init_logging ();
-    genesis::logger lg;
+void init_logging () {
+    boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend> >
+       sink = add_console_log();
+#ifndef GENESIS_DEBUG
+    sink->set_filter(boost::log::expressions::attr<int>("Severity") >= 4);
+#endif
+    sink->locked_backend ()->auto_flush (true);
+    add_file_log ("genesis.log");
+    add_common_attributes ();
+}
 
-    genesis::client_controller_ptr controller =
-       genesis::make_client_controller ();
-
-    genesis::listen::udp_multicast_listener
-       listener ("239.255.255.1", GENESIS_PORT, controller);
-
-    boost::system::error_condition ec = listener.start ();
-    if (!ec) {
-        BOOST_LOG (lg) << "Listening...";
-        std::string str;
-        std::cin >> str;
-        ec = listener.stop ();
-    }
-    if (ec) {
-        std::cerr << ec << std::endl;
-    }
 }

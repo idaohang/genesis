@@ -1,6 +1,6 @@
 /*!
- * \file main.cpp
- * \brief Genesis main line.
+ * \file error.hpp
+ * \brief Defines custom error codes for Genesis.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -27,32 +27,32 @@
  * -------------------------------------------------------------------------
  */
 
-#include "client_controller.hpp"
-#include "udp_multicast_listener.hpp"
-#include "log.hpp"
+#include "error.hpp"
 
-enum {
-    GENESIS_PORT = 6951
-};
+namespace genesis {
 
-int main () {
-    genesis::init_logging ();
-    genesis::logger lg;
+const boost::array <std::string, max_error> error_category::messages_ = {{
+        "Success",
+        "Invalid packet length",
+        "Invalid station",
+        "Unknown station type",
+        "Base station is already set",
+        "The specified rover already exists",
+        "The specified station was not found",
+        "Already running"
+    }};
 
-    genesis::client_controller_ptr controller =
-       genesis::make_client_controller ();
+const char *error_category::name () const {
+    return "genesis";
+}
 
-    genesis::listen::udp_multicast_listener
-       listener ("239.255.255.1", GENESIS_PORT, controller);
-
-    boost::system::error_condition ec = listener.start ();
-    if (!ec) {
-        BOOST_LOG (lg) << "Listening...";
-        std::string str;
-        std::cin >> str;
-        ec = listener.stop ();
+std::string error_category::message (int ev) const {
+    if (ev < 0 || ev >= static_cast<int> (messages_.size ())) {
+        return "Unknown error";
     }
-    if (ec) {
-        std::cerr << ec << std::endl;
+    else {
+        return messages_[ev];
     }
+}
+
 }

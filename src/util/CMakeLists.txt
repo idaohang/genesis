@@ -15,27 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with Genesis. If not, see <http://www.gnu.org/licenses/>.
 #
-add_subdirectory (listen)
-add_subdirectory (util)
 
-set (GENESIS_SOURCES
-  main.cpp
-  error.cpp
-  client_controller.cpp
-  log.cpp)
+set (PING_SOURCES
+  ping.cpp)
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/src/listen
   ${Boost_INCLUDE_DIRS}
-)
+  )
 
-file (GLOB GENESIS_HEADERS "*.hpp")
-add_executable (genesis ${GENESIS_SOURCES} ${GENESIS_HEADERS})
+add_executable (ping ${PING_SOURCES})
 target_link_libraries (
-  genesis
+  ping
   listen_lib
-  ${Boost_LIBRARIES}
-)
-
-source_group (Headers FILES ${GENESIS_HEADERS})
+  ${Boost_LIBRARIES})

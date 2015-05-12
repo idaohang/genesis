@@ -31,6 +31,7 @@
 #define GENESIS_UDP_MULTICAST_LISTENER_HPP
 
 #include "client_listener.hpp"
+#include "log.hpp"
 #include <string>
 
 namespace genesis {
@@ -53,8 +54,8 @@ public:
     * \param controller The controller to defer to.
     */
    udp_multicast_listener (const char *address,
-			   short port,
-			   controller_ptr controller);
+                           short port,
+                           controller_ptr controller);
 
    virtual ~udp_multicast_listener ();
 
@@ -68,6 +69,7 @@ private:
    friend class ::genesis::listen::udp_multicast_listener::listener_impl;
    boost::shared_ptr <listener_impl> impl_;
 
+   logger_mt lg;
 };
 
 }

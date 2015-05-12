@@ -30,44 +30,47 @@
 #ifndef GENESIS_CLIENT_LISTENER_HPP
 #define GENESIS_CLIENT_LISTENER_HPP
 
-#include <boost/move/core.hpp>
+#include <boost/noncopyable.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace genesis {
-namespace listen {
 
 class client_controller;
+
+namespace listen {
+
 
 /*!
  * \brief This is the base class for accepting client notifications
  * (pings) and adding the clients to the client controller.
  */
-class client_listener {
+class client_listener : boost::noncopyable {
 public:
    typedef client_controller controller_type;
    typedef boost::shared_ptr <controller_type> controller_ptr;
 
-   typedef boost::system::error_code error_type;
+   typedef boost::system::error_condition error_type;
 protected:
-   client_listener (controller_ptr controller);
-
-   BOOST_MOVABLE_BUT_NOT_COPYABLE (client_listener);
+   inline client_listener (controller_ptr controller)
+       : controller_ (controller)
+      {
+      }
 
 public:
-   virtual ~client_listener ();
+   inline virtual ~client_listener ()
+      {
+      }
 
    virtual error_type start () = 0;
    virtual error_type stop () = 0;
    virtual bool is_listening () const = 0;
+
 protected:
-   inline const controller_type &get_controller ( ) const {
-      return *controller_;
+   inline controller_ptr get_controller ( ) const {
+      return controller_;
    }
 
-   inline controller_type &get_controller ( ) {
-      return *controller_;
-   }
 
 private:
    controller_ptr controller_;

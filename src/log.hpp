@@ -1,6 +1,6 @@
 /*!
- * \file main.cpp
- * \brief Genesis main line.
+ * \file log.hpp
+ * \brief Set up logging.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,33 +26,45 @@
  *
  * -------------------------------------------------------------------------
  */
+#ifndef GENESIS_LOG_HPP
+#define GENESIS_LOG_HPP
 
-#include "client_controller.hpp"
-#include "udp_multicast_listener.hpp"
-#include "log.hpp"
+#define BOOST_LOG_DYN_LINK 1
+#include <boost/log/sources/severity_feature.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
-enum {
-    GENESIS_PORT = 6951
+namespace genesis {
+
+void init_logging ();
+
+enum log_severity {
+    trace,
+    debug,
+    info,
+    warning,
+    error,
+    critical
 };
 
-int main () {
-    genesis::init_logging ();
-    genesis::logger lg;
+class logger : public boost::log::sources::severity_logger<log_severity> {
+public:
+   logger ()
+       : severity_logger (boost::log::keywords::severity = info)
+      {
+      }
+};
 
-    genesis::client_controller_ptr controller =
-       genesis::make_client_controller ();
 
-    genesis::listen::udp_multicast_listener
-       listener ("239.255.255.1", GENESIS_PORT, controller);
+class logger_mt : public boost::log::sources::severity_logger_mt<log_severity> {
+public:
+   logger_mt ()
+       : severity_logger_mt (boost::log::keywords::severity = info)
+      {
+      }
+};
 
-    boost::system::error_condition ec = listener.start ();
-    if (!ec) {
-        BOOST_LOG (lg) << "Listening...";
-        std::string str;
-        std::cin >> str;
-        ec = listener.stop ();
-    }
-    if (ec) {
-        std::cerr << ec << std::endl;
-    }
+
 }
+
+#endif // GENESIS_LOG_HPP
