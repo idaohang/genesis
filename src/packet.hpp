@@ -1,5 +1,5 @@
 /*!
- * \file udp_packet.hpp
+ * \file packet.hpp
  * \brief Defines the structure of the packet received by UDP listeners.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
@@ -27,19 +27,17 @@
  * -------------------------------------------------------------------------
  */
 
-#ifndef GENESIS_LISTEN_UDP_PACKET_HPP
-#define GENESIS_LISTEN_UDP_PACKET_HPP
+#ifndef GENESIS_PACKET_HPP
+#define GENESIS_PACKET_HPP
 
 #include "station.hpp"
 #include <boost/static_assert.hpp>
 
 namespace genesis {
-namespace listen {
-
 /*!
  * \brief The information contained in a UDP packet received from a client.
  */
-struct udp_packet {
+struct packet {
    typedef genesis::station::station_type station_type;
 
    enum {
@@ -48,15 +46,15 @@ struct udp_packet {
        FIXED_DATA_SIZE = PORT_SIZE + TYPE_SIZE
    };
 
-   inline udp_packet ()
+   inline packet ()
        : type_ (genesis::station::STATION_TYPE_UNKNOWN)
       {
       }
 
    template <size_t N>
-   void unpack (char (&packet)[N]) {
+   void unpack (char (&pkt)[N]) {
        BOOST_STATIC_ASSERT (N == FIXED_DATA_SIZE);
-       unpack_impl (packet);
+       unpack_impl (pkt);
    }
 
 
@@ -73,18 +71,18 @@ private:
    station_type type_;
 
 private:
-   void unpack_impl (char *packet);
+   void unpack_impl (char *pkt);
 };
 
-inline genesis::station make_station (const udp_packet &packet,
-                                      const std::string &address)
+inline station make_station (const packet &pkt,
+                             const std::string &address)
 {
-   return genesis::station (packet.get_station_type (),
+   return station (pkt.get_station_type (),
 			    address,
-			    packet.get_port ());
+			    pkt.get_port ());
 }
 
-}
+
 }
 
-#endif // GENESIS_LISTEN_UDP_PACKET_HPP
+#endif // GENESIS_PACKET_HPP

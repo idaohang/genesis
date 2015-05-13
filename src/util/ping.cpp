@@ -27,13 +27,13 @@
  * -------------------------------------------------------------------------
  */
 
-#include "udp_packet.hpp"
+#include "packet.hpp"
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <cstring>
 
 enum {
-    GENESIS_PORT = 6951
+    GENESIS_PORT = 9255
 };
 
 struct sender {
@@ -50,7 +50,7 @@ struct sender {
           *port = 1234;
 
           unsigned *type = reinterpret_cast <unsigned *>(
-              &data_[genesis::listen::udp_packet::PORT_SIZE]);
+              &data_[genesis::packet::PORT_SIZE]);
           *type = base ?
              genesis::station::STATION_TYPE_BASE :
              genesis::station::STATION_TYPE_ROVER;
@@ -69,7 +69,7 @@ struct sender {
 
 private:
    enum {
-       DATA_SIZE = genesis::listen::udp_packet::FIXED_DATA_SIZE
+       DATA_SIZE = genesis::packet::FIXED_DATA_SIZE
    };
 
    void handle_send_to (boost::system::error_code ec) {

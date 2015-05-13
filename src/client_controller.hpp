@@ -40,16 +40,6 @@
 
 namespace genesis {
 
-class station;
-
-class client_controller;
-typedef boost::shared_ptr <client_controller> client_controller_ptr;
-
-/*!
- * Construct a new client controller.
- */
-client_controller_ptr make_client_controller ();
-
 /*!
  * \brief This class keeps track of which clients are connected
  *  and what kind of client they are.
@@ -60,9 +50,8 @@ public:
 private:
    BOOST_MOVABLE_BUT_NOT_COPYABLE (client_controller)
 
-   client_controller ();
-   friend client_controller_ptr make_client_controller ();
 public:
+   client_controller ();
    ~client_controller ();
 
    error_type add_station (station st);

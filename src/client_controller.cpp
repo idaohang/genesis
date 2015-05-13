@@ -72,10 +72,6 @@ private:
 
 }
 
-client_controller_ptr make_client_controller () {
-    return client_controller_ptr (new client_controller);
-}
-
 client_controller::client_controller()
 {
 }

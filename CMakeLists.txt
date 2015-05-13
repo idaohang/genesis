@@ -32,6 +32,10 @@ ExternalProject_Add(gnss-sdr
   BUILD_COMMAND make
   INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/gnss-sdr/install)
 
+ExternalProject_Get_Property(gnss-sdr binary_dir)
+set(GNSS_SDR_LIBRARY_DIRS ${binary_dir})
+set(GNSS_SDR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/gnss-sdr/src)
+
 # Find Boost
 find_package(Boost COMPONENTS system thread date_time log REQUIRED)
 

@@ -1,5 +1,5 @@
 /*!
- * \file udp_packet.cpp
+ * \file packet.cpp
  * \brief Defines the method for unpacking UDP packets.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
@@ -27,29 +27,28 @@
  * -------------------------------------------------------------------------
  */
 
-#include "udp_packet.hpp"
+#include "packet.hpp"
 #include <cstring>
 #include <boost/asio/detail/socket_ops.hpp>
 
 namespace genesis {
-namespace listen {
 
 using namespace boost::asio::detail::socket_ops;
 
-void udp_packet::unpack_impl (char *packet) {
+void packet::unpack_impl (char *pkt) {
     // unpack the port number
-    port_ = *reinterpret_cast <unsigned short *> (&packet[0]);
+    port_ = *reinterpret_cast <unsigned short *> (&pkt[0]);
     port_ = network_to_host_short (port_);
 
     // unpack the type
-    unsigned t = *reinterpret_cast <unsigned *>(&packet[PORT_SIZE]);
+    unsigned t = *reinterpret_cast <unsigned *>(&pkt[PORT_SIZE]);
     type_ = static_cast<station_type> (network_to_host_long (t));
-    if (type_ != genesis::station::STATION_TYPE_BASE &&
-        type_ != genesis::station::STATION_TYPE_ROVER)
+    if (type_ != station::STATION_TYPE_BASE &&
+        type_ !=station::STATION_TYPE_ROVER)
     {
-        type_ = genesis::station::STATION_TYPE_UNKNOWN;
+        type_ = station::STATION_TYPE_UNKNOWN;
     }
 }
 
-}
+
 }

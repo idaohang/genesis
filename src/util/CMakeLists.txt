@@ -22,12 +22,10 @@ set (PING_SOURCES
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/src/listen
   ${Boost_INCLUDE_DIRS}
   )
 
 add_executable (ping ${PING_SOURCES})
 target_link_libraries (
   ping
-  listen_lib
   ${Boost_LIBRARIES})

@@ -27,31 +27,17 @@
  * -------------------------------------------------------------------------
  */
 
-#include "client_controller.hpp"
-#include "udp_multicast_listener.hpp"
 #include "log.hpp"
-
-enum {
-    GENESIS_PORT = 6951
-};
+#include "service.hpp"
 
 int main () {
     genesis::init_logging ();
     genesis::logger lg;
 
-    genesis::client_controller_ptr controller =
-       genesis::make_client_controller ();
+    genesis::service service;
 
-    genesis::listen::udp_multicast_listener
-       listener ("239.255.255.1", GENESIS_PORT, controller);
-
-    boost::system::error_condition ec = listener.start ();
-    if (!ec) {
-        BOOST_LOG (lg) << "Listening...";
-        std::string str;
-        std::cin >> str;
-        ec = listener.stop ();
-    }
+    boost::system::error_condition ec = service.run ("./genesis.socket",
+                                                     "239.255.255.1");
     if (ec) {
         std::cerr << ec << std::endl;
     }
