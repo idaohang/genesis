@@ -57,8 +57,7 @@ public:
 
    /*!
     * \brief Construct a station, setting the station type
-    * the address and the port. The name defaults to the last
-    * 15 characters of the address.
+    * the address and the port.
     */
    station (station_type type,
             const std::string &address,
@@ -66,22 +65,6 @@ public:
        : type_ (type), address_ (address), port_ (port)
       {
       }
-
-   /*!
-    * \brief Construct a station, setting the station type
-    * the address, the port, and the name.
-    */
-   station (station_type type,
-            const std::string &address,
-            unsigned short port,
-            const std::string &name)
-       : name_ (name), type_ (type), address_ (address), port_ (port)
-      {
-      }
-
-   inline const std::string &get_name () const {
-       return name_;
-   }
 
    inline station_type get_type () const {
        return type_;
@@ -97,7 +80,6 @@ public:
 
 
 private:
-   std::string name_; // friendly name
    station_type type_; // base station or rover
    std::string address_; // IPv4 or 6 address
    unsigned short port_; // The port to connect to
@@ -105,16 +87,16 @@ private:
 
 
 inline bool operator < (const station &l, const station &r) {
-    return l.get_name () < r.get_name ();
+    return l.get_address () < r.get_address ();
 }
 inline bool operator <= (const station &l, const station &r) {
-    return l.get_name () <= r.get_name ();
+    return l.get_address () <= r.get_address ();
 }
 inline bool operator > (const station &l, const station &r) {
-    return l.get_name () > r.get_name ();
+    return l.get_address () > r.get_address ();
 }
 inline bool operator >= (const station &l, const station &r) {
-    return l.get_name () >= r.get_name ();
+    return l.get_address () >= r.get_address ();
 }
 
 }

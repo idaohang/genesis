@@ -45,10 +45,6 @@ bool validate_station (const station &st) {
         return false;
     }
 
-    if (st.get_name ().length () == 0) {
-        return false;
-    }
-
     if (st.get_address ().length () == 0) {
         return false;
     }
@@ -60,18 +56,18 @@ bool validate_station (const station &st) {
     return true;
 }
 
-struct find_by_name {
-   find_by_name (const std::string &name)
-       : name_ (name)
+struct find_by_address {
+   find_by_address (const std::string &address)
+       : address_ (address)
       {
       }
 
    bool operator() (const station &st) {
-       return st.get_name () == name_;
+       return st.get_address () == address_;
    }
 
 private:
-   const std::string &name_;
+   const std::string &address_;
 };
 
 }
@@ -98,7 +94,7 @@ client_controller::error_type client_controller::add_station (station st) {
     }
 
     if (st.get_type () == station::STATION_TYPE_ROVER) {
-        if (st.get_name () == base_.get_name ()) {
+        if (st.get_address () == base_.get_address ()) {
 	   // already the base station
 	   return make_error_condition (station_is_base);
         }
@@ -126,15 +122,15 @@ client_controller::error_type client_controller::add_station (station st) {
 }
 
 client_controller::error_type
-client_controller::remove_station (const std::string &name) {
+client_controller::remove_station (const std::string &address) {
     typedef std::set<station>::const_iterator iterator_type;
 
-    if (base_.get_name () == name) {
+    if (base_.get_address () == address) {
         return reset_base ();
     }
     iterator_type found = std::find_if (boost::begin (rovers_),
                                         boost::end (rovers_),
-                                        detail::find_by_name (name));
+                                        detail::find_by_address (address));
     if (found == boost::end (rovers_)) {
         // Not found
         return make_error_condition (station_not_found);

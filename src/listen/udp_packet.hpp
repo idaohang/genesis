@@ -43,10 +43,9 @@ struct udp_packet {
    typedef genesis::station::station_type station_type;
 
    enum {
-       NAME_SIZE = 15,
        PORT_SIZE = 2,
        TYPE_SIZE = 4,
-       FIXED_DATA_SIZE = NAME_SIZE + PORT_SIZE + TYPE_SIZE
+       FIXED_DATA_SIZE = PORT_SIZE + TYPE_SIZE
    };
 
    inline udp_packet ()
@@ -60,9 +59,6 @@ struct udp_packet {
        unpack_impl (packet);
    }
 
-   inline const char *get_name () const {
-       return name_;
-   }
 
    inline unsigned short get_port () const {
        return port_;
@@ -73,7 +69,6 @@ struct udp_packet {
    }
 
 private:
-   char name_ [NAME_SIZE + 1];
    unsigned short port_;
    station_type type_;
 
@@ -84,19 +79,9 @@ private:
 inline genesis::station make_station (const udp_packet &packet,
                                       const std::string &address)
 {
-    std::string name (packet.get_name ());
-
-    if (name.length () == 0) {
-        return genesis::station (packet.get_station_type (),
-                                 address,
-                                 packet.get_port ());
-    }
-    else {
-        return genesis::station (packet.get_station_type (),
-                                 address,
-                                 packet.get_port (),
-                                 packet.get_name ());
-    }
+   return genesis::station (packet.get_station_type (),
+			    address,
+			    packet.get_port ());
 }
 
 }

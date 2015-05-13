@@ -44,15 +44,13 @@ struct sender {
          socket_ (service, endpoint_.protocol ())
       {
           ::memset (data_, 0, sizeof (data_));
-          ::memcpy (data_, "PING", 4);
 
           unsigned short *port = reinterpret_cast <unsigned short *>(
-              &data_[genesis::listen::udp_packet::NAME_SIZE]);
+              &data_[0]);
           *port = 1234;
 
           unsigned *type = reinterpret_cast <unsigned *>(
-              &data_[genesis::listen::udp_packet::NAME_SIZE +
-                     genesis::listen::udp_packet::PORT_SIZE]);
+              &data_[genesis::listen::udp_packet::PORT_SIZE]);
           *type = base ?
              genesis::station::STATION_TYPE_BASE :
              genesis::station::STATION_TYPE_ROVER;

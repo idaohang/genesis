@@ -67,7 +67,7 @@ public:
 
    error_type add_station (station st);
 
-   error_type remove_station (const std::string &name);
+   error_type remove_station (const std::string &address);
 
    bool has_base () const;
 

@@ -188,14 +188,13 @@ private:
 	  if (ec.value () != genesis::station_exists) {
            BOOST_LOG_SEV (owner_.lg, error)
               << "Error adding station "
-              << "\"" << packet.get_name () << "\"@" << address
+              << address
               << " to controller: " << ec.message ();
 	  }
        }
        else {
            BOOST_LOG (owner_.lg) << "Added station "
-                                 << packet.get_name ()
-                                 << "@" << address
+                                 <<  address
                                  << " to controller";
        }
    }
@@ -207,7 +206,6 @@ private:
        BOOST_LOG_SEV (owner_.lg, trace)
 	  << "Received station packet from "
 	  << sender_endpoint_.address ().to_string ()
-	  << " name=" << packet.get_name ()
 	  << " port=" << packet.get_port ()
 	  << " type=" << packet.get_station_type ();
 

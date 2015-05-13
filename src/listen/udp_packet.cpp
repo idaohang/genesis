@@ -37,27 +37,12 @@ namespace listen {
 using namespace boost::asio::detail::socket_ops;
 
 void udp_packet::unpack_impl (char *packet) {
-    // Avoid nasty injection. Only copy printable ASCII
-    int i;
-    for (i = 0; i < NAME_SIZE; i++) {
-        if (packet[i] > 0x1f && packet[i] != 0x7f) {
-            name_[i] = packet[i];
-        }
-        else if (packet[i] == 0) {
-            break;
-        }
-        else {
-            name_[i] = '-';
-        }
-    }
-    name_[i] = 0;
-
     // unpack the port number
-    port_ = *reinterpret_cast <unsigned short *> (&packet[NAME_SIZE]);
+    port_ = *reinterpret_cast <unsigned short *> (&packet[0]);
     port_ = network_to_host_short (port_);
 
     // unpack the type
-    unsigned t = *reinterpret_cast <unsigned *>(&packet[NAME_SIZE + PORT_SIZE]);
+    unsigned t = *reinterpret_cast <unsigned *>(&packet[PORT_SIZE]);
     type_ = static_cast<station_type> (network_to_host_long (t));
     if (type_ != genesis::station::STATION_TYPE_BASE &&
         type_ != genesis::station::STATION_TYPE_ROVER)
