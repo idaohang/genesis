@@ -26,25 +26,60 @@
  *
  * -------------------------------------------------------------------------
  */
-#define BOOST_LOG_DYN_LINK 1
+#include "log.hpp"
+#include <iomanip>
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/expressions/attr.hpp>
+#include <boost/log/support/date_time.hpp>
+#include <boost/log/expressions.hpp>
 
 namespace genesis {
 
 using namespace boost::log;
+namespace expr = boost::log::expressions;
+namespace attrs = boost::log::attributes;
+
+
+std::ostream& operator<< (std::ostream& strm, genesis::log_severity level) {
+    static const char* strings[] =
+    {
+        "trace",
+        "debug",
+	"info",
+        "warning",
+        "error",
+        "critical"
+    };
+
+    if (static_cast< std::size_t >(level) < sizeof(strings) / sizeof(*strings))
+        strm << strings[level];
+    else
+        strm << static_cast< int >(level);
+
+    return strm;
+}
+
+BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", genesis::log_severity)
+BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "Timestamp", boost::posix_time::ptime)
 
 void init_logging () {
     boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend> >
        sink = add_console_log();
 #ifndef GENESIS_DEBUG
-    sink->set_filter(boost::log::expressions::attr<int>("Severity") >= 4);
+    sink->set_filter(severity >= debug);
 #endif
+    sink->set_formatter (
+       expr::stream
+       << std::setw (8) << std::left << severity
+       << " [" << timestamp << "] "
+       << expr::smessage);
+
     sink->locked_backend ()->auto_flush (true);
     add_file_log ("genesis.log");
     add_common_attributes ();
+    boost::log::core::get ()->add_global_attribute("Timestamp",
+						   attrs::local_clock());
 }
 
 }

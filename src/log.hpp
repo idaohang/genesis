@@ -47,6 +47,7 @@ enum log_severity {
     critical
 };
 
+
 class logger : public boost::log::sources::severity_logger<log_severity> {
 public:
    logger ()

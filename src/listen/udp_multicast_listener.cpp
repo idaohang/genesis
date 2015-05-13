@@ -185,10 +185,12 @@ private:
        error_type ec =
           ctrlr->add_station (make_station (packet, boost::move (address)));
        if (ec) {
+	  if (ec.value () != genesis::station_exists) {
            BOOST_LOG_SEV (owner_.lg, error)
               << "Error adding station "
               << "\"" << packet.get_name () << "\"@" << address
               << " to controller: " << ec.message ();
+	  }
        }
        else {
            BOOST_LOG (owner_.lg) << "Added station "
@@ -202,6 +204,12 @@ private:
        // Unwrap packet
        udp_packet packet;
        packet.unpack (data_);
+       BOOST_LOG_SEV (owner_.lg, trace)
+	  << "Received station packet from "
+	  << sender_endpoint_.address ().to_string ()
+	  << " name=" << packet.get_name ()
+	  << " port=" << packet.get_port ()
+	  << " type=" << packet.get_station_type ();
 
        if (packet.get_station_type () != station::STATION_TYPE_UNKNOWN) {
            add_station (packet);
