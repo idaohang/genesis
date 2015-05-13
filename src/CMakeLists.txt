@@ -23,7 +23,9 @@ set (GENESIS_SOURCES
   client_controller.cpp
   log.cpp
   packet.cpp
-  service.cpp)
+  service.cpp
+  child.cpp
+  session.cpp)
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}

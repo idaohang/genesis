@@ -82,7 +82,9 @@ client_controller::~client_controller()
 }
 
 
-client_controller::error_type client_controller::add_station (station st) {
+client_controller::error_type client_controller::add_station (
+    const station &st)
+{
     using namespace std;
 
     if (!detail::validate_station (st)) {
@@ -91,27 +93,24 @@ client_controller::error_type client_controller::add_station (station st) {
 
     if (st.get_type () == station::STATION_TYPE_ROVER) {
         if (st.get_address () == base_.get_address ()) {
-	   // already the base station
-	   return make_error_condition (station_is_base);
+            // already the base station
+            return make_error_condition (station_is_base);
         }
-        if (!rovers_.insert (boost::move (st)).second) {
-	   // already inserted
+        if (!rovers_.insert (st).second) {
+            // already inserted
             return make_error_condition (station_exists);
         }
-
-        // TODO: Kick off new rover receiver
     }
     else {
         if (has_base ()) {
             return make_error_condition (base_already_set);
         }
         if (rovers_.find (st) != boost::end (rovers_)) {
- 	    // already a rover
-	    return make_error_condition (station_is_rover);
+            // already a rover
+            return make_error_condition (station_is_rover);
         }
 
-        // TODO: Kick off base station receiver
-        swap (base_, boost::move (st));
+        base_ = st;
     }
 
     return error_type ();
@@ -132,7 +131,6 @@ client_controller::remove_station (const std::string &address) {
         return make_error_condition (station_not_found);
     }
 
-    // TODO: handle any shutdown code required
     rovers_.erase (found);
     return error_type ();
 }
@@ -142,7 +140,6 @@ bool client_controller::has_base () const {
 }
 
 client_controller::error_type client_controller::reset_base () {
-    // TODO: handle any shutdown required
     base_ = station ();
     return error_type ();
 }

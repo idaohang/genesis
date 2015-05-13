@@ -1,6 +1,6 @@
 /*!
- * \file packet.cpp
- * \brief Defines the method for unpacking UDP packets.
+ * \file child.hpp
+ * \brief Child process for gnss-sdr
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,29 +26,38 @@
  *
  * -------------------------------------------------------------------------
  */
+#ifndef GENESIS_CHILD_HPP
+#define GENESIS_CHILD_HPP
 
-#include "packet.hpp"
-#include <cstring>
-#include <boost/asio/detail/socket_ops.hpp>
+#include <boost/asio.hpp>
 
 namespace genesis {
 
-using namespace boost::asio::detail::socket_ops;
+class station;
 
-void packet::unpack_impl (const char *pkt) {
-    // unpack the port number
-    port_ = *reinterpret_cast <const unsigned short *> (&pkt[0]);
-    port_ = network_to_host_short (port_);
+/*!
+ * \brief This class connects to the domain socket and
+ * starts the gnss-sdr flowgraph.
+ */
+class child {
+public:
+   typedef boost::system::error_condition error_type;
 
-    // unpack the type
-    unsigned t = *reinterpret_cast <const unsigned *>(&pkt[PORT_SIZE]);
-    type_ = static_cast<station_type> (network_to_host_long (t));
-    if (type_ != station::STATION_TYPE_BASE &&
-        type_ !=station::STATION_TYPE_ROVER)
-    {
-        type_ = station::STATION_TYPE_UNKNOWN;
-    }
+   child (boost::asio::io_service &io_service);
+
+   error_type run (const station &st,
+                   const std::string &socket);
+private:
+
+   void on_stop ();
+
+private:
+
+   boost::asio::io_service &io_service_;
+   boost::asio::local::stream_protocol::socket socket_;
+   boost::asio::signal_set signal_;
+};
+
 }
 
-
-}
+#endif // GENESIS_CHILD_HPP

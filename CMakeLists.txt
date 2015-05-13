@@ -37,7 +37,7 @@ set(GNSS_SDR_LIBRARY_DIRS ${binary_dir})
 set(GNSS_SDR_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/gnss-sdr/src)
 
 # Find Boost
-find_package(Boost COMPONENTS system thread date_time log REQUIRED)
+find_package(Boost COMPONENTS system thread date_time log filesystem REQUIRED)
 
 # Compiler flags
 set (MY_CXX_FLAGS_DEBUG "-DGENESIS_DEBUG")

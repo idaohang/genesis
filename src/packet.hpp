@@ -32,6 +32,7 @@
 
 #include "station.hpp"
 #include <boost/static_assert.hpp>
+#include <boost/array.hpp>
 
 namespace genesis {
 /*!
@@ -58,6 +59,12 @@ struct packet {
    }
 
 
+   template <size_t N>
+   void unpack (const boost::array<char, N> &pkt) {
+       BOOST_STATIC_ASSERT (N == FIXED_DATA_SIZE);
+       unpack_impl (&pkt[0]);
+   }
+
    inline unsigned short get_port () const {
        return port_;
    }
@@ -71,7 +78,7 @@ private:
    station_type type_;
 
 private:
-   void unpack_impl (char *pkt);
+   void unpack_impl (const char *pkt);
 };
 
 inline station make_station (const packet &pkt,

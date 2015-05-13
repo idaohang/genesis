@@ -1,6 +1,6 @@
 /*!
- * \file packet.cpp
- * \brief Defines the method for unpacking UDP packets.
+ * \file session.cpp
+ * \brief Server-side comms with child process.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,29 +26,42 @@
  *
  * -------------------------------------------------------------------------
  */
-
-#include "packet.hpp"
-#include <cstring>
-#include <boost/asio/detail/socket_ops.hpp>
+#include "session.hpp"
+#include "client_controller.hpp"
+#include <boost/bind.hpp>
 
 namespace genesis {
 
-using namespace boost::asio::detail::socket_ops;
 
-void packet::unpack_impl (const char *pkt) {
-    // unpack the port number
-    port_ = *reinterpret_cast <const unsigned short *> (&pkt[0]);
-    port_ = network_to_host_short (port_);
 
-    // unpack the type
-    unsigned t = *reinterpret_cast <const unsigned *>(&pkt[PORT_SIZE]);
-    type_ = static_cast<station_type> (network_to_host_long (t));
-    if (type_ != station::STATION_TYPE_BASE &&
-        type_ !=station::STATION_TYPE_ROVER)
+void session::start() {
+    start_read ();
+}
+
+void session::handle_read(const boost::system::error_code& error,
+                          size_t /* bytes_transferred */)
+{
+    if (!error)
     {
-        type_ = station::STATION_TYPE_UNKNOWN;
+        // TODO: Data to RTKLIB
+        start_read ();
+    }
+    else {
+        socket_.close ();
+        BOOST_LOG (lg_) << "Removing station " << station_.get_address ();
+        controller_->remove_station (station_.get_address ());
     }
 }
 
+
+void session::start_read () {
+    socket_.async_read_some(
+        boost::asio::buffer(data_),
+        boost::bind(&session::handle_read,
+                    shared_from_this(),
+                    boost::asio::placeholders::error,
+                    boost::asio::placeholders::bytes_transferred));
+
+}
 
 }

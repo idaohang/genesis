@@ -28,7 +28,13 @@
  */
 
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include "service.hpp"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include "session.hpp"
+#include "child.hpp"
 
 namespace genesis {
 
@@ -41,8 +47,11 @@ using boost::asio::local::stream_protocol;
 
 service::service ()
     : acceptor_ (io_service_),
-      mcast_socket_ (io_service_)
+      signal_ (io_service_, SIGCHLD),
+      mcast_socket_ (io_service_),
+      controller_ (boost::make_shared<client_controller> ())
 {
+    start_signal_wait ();
 }
 
 service::error_type service::run (const std::string &socket_file,
@@ -80,6 +89,13 @@ service::error_type service::setup_acceptor (const std::string &socket_file) {
     acceptor_.bind (stream_protocol::endpoint (socket_file_), ec);
     if (ec) {
         BOOST_LOG_SEV (lg_, critical) << "Failed to bind to socket file "
+                                      << socket_file_
+                                      << ": " << ec.message ();
+        return to_error_condition (ec);
+    }
+
+    if (acceptor_.listen (boost::asio::socket_base::max_connections, ec)) {
+        BOOST_LOG_SEV (lg_, critical) << "Failed to listen to socket file "
                                       << socket_file_
                                       << ": " << ec.message ();
         return to_error_condition (ec);
@@ -190,26 +206,95 @@ void service::handle_packet () {
     // Unwrap packet
     packet p;
     p.unpack (data_);
-    ::memset (data_, 0, MAX_DATA_LENGTH);
+    data_.assign (0);
 
     std::string address = sender_endpoint_.address ().to_string ();
+    station st = make_station (p, address);
+
     BOOST_LOG_SEV (lg_, trace)
        << "Received station packet from "
-       << address
-       << " port=" << p.get_port ()
-       << " type=" << p.get_station_type ();
+       << st.get_address ()
+       << " port=" << st.get_port ()
+       << " type=" << st.get_type ();
 
-    error_type e = controller_.add_station (make_station (p, address));
+    error_type e = controller_->add_station (st);
     if (e) {
         BOOST_LOG_SEV (lg_, error)
            << "Error adding new station: " << e.message();
     }
     else {
-        // TODO fork
+        boost::log::core::get ()->flush ();
+        boost::log::core::get ()->set_logging_enabled (false);
 
-        // child opens domain socket
+        io_service_.notify_fork (boost::asio::io_service::fork_prepare);
 
-        // parent accepts child client and starts a new session
+        if (fork () == 0) {
+            fork_child (st);
+        }
+        else {
+            fork_parent (st);
+        }
+
+    }
+}
+
+
+void service::start_signal_wait () {
+    signal_.async_wait (boost::bind (&service::handle_signal_wait, this));
+}
+
+void service::handle_signal_wait () {
+    if (acceptor_.is_open ()) {
+        int status = 0;
+        int count = 0;
+        while (waitpid (-1, &status, WNOHANG) > 0) {
+            count++;
+        }
+
+        BOOST_LOG_SEV (lg_, trace) << "Reaped " << count << " zombies.";
+
+        start_signal_wait ();
+    }
+}
+
+
+void service::fork_child (const station &st) {
+    acceptor_.close ();
+    mcast_socket_.close ();
+    signal_.cancel ();
+
+    close (0);
+    close (1);
+    close (2);
+    open("/dev/null", O_RDONLY);
+    open("/dev/null", O_WRONLY);
+    dup (1);
+
+    io_service_.notify_fork (boost::asio::io_service::fork_child);
+
+    // child opens domain socket and starts gnss-sdr
+    child ch (io_service_);
+    ch.run (st, socket_file_);
+}
+
+void service::fork_parent (const station &st) {
+    // parent accepts child client and starts a new session
+    io_service_.notify_fork (boost::asio::io_service::fork_parent);
+    boost::log::core::get ()->set_logging_enabled (true);
+
+    BOOST_LOG_SEV (lg_, info) << "New child spawned for connection to "
+                              << st.get_address ();
+
+    boost::system::error_code err;
+    boost::shared_ptr <session> new_session (
+        new session (io_service_, st, controller_));
+    acceptor_.accept (new_session->socket (), err);
+    if (err) {
+        BOOST_LOG_SEV (lg_, error) << "Error opening connection "
+           "to child process: " << err.message ();
+    }
+    else {
+        new_session->start ();
     }
 }
 

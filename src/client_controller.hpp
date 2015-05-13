@@ -54,7 +54,7 @@ public:
    client_controller ();
    ~client_controller ();
 
-   error_type add_station (station st);
+   error_type add_station (const station &st);
 
    error_type remove_station (const std::string &address);
 

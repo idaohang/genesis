@@ -29,13 +29,11 @@
 
 #ifndef GENESIS_SERVICE_HPP
 #define GENESIS_SERVICE_HPP
-/*
-#ifndef BOOST_ASIO_HAS_LOCAL_SOCKETS
-#error Local sockets are required
-#endif
-*/
+
+#include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/move/core.hpp>
+#include <boost/shared_ptr.hpp>
 #include "client_controller.hpp"
 #include "error.hpp"
 #include "log.hpp"
@@ -66,6 +64,12 @@ private:
                             size_t bytes_received);
 
    void handle_packet ();
+
+   void start_signal_wait ();
+   void handle_signal_wait ();
+
+   void fork_child (const station &st);
+   void fork_parent (const station &st);
 private:
    enum {
        MAX_DATA_LENGTH = packet::FIXED_DATA_SIZE
@@ -77,13 +81,16 @@ private:
    boost::asio::local::stream_protocol::acceptor acceptor_;
    std::string socket_file_;
 
+   // Signals members
+   boost::asio::signal_set signal_;
+
    // Multicast members
-   char data_ [MAX_DATA_LENGTH];
+   boost::array <char, MAX_DATA_LENGTH> data_;
    boost::asio::ip::udp::socket mcast_socket_;
    boost::asio::ip::udp::endpoint sender_endpoint_;
 
    // Station members
-   client_controller controller_;
+   boost::shared_ptr <client_controller> controller_;
 
    // Logging members
    logger lg_;
