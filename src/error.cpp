@@ -39,7 +39,9 @@ const boost::array <std::string, max_error> error_category::messages_ = {{
         "Base station is already set",
         "The specified rover already exists",
         "The specified station was not found",
-        "Already running"
+        "Already running",
+	"The specified station is a base station",
+	"The specified station is a rover"
     }};
 
 const char *error_category::name () const {

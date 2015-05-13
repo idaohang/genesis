@@ -44,6 +44,8 @@ enum errorc {
     station_exists,
     station_not_found,
     already_running,
+    station_is_base,
+    station_is_rover,
     max_error
 };
 

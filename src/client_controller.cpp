@@ -98,7 +98,12 @@ client_controller::error_type client_controller::add_station (station st) {
     }
 
     if (st.get_type () == station::STATION_TYPE_ROVER) {
+        if (st.get_name () == base_.get_name ()) {
+	   // already the base station
+	   return make_error_condition (station_is_base);
+        }
         if (!rovers_.insert (boost::move (st)).second) {
+	   // already inserted
             return make_error_condition (station_exists);
         }
 
@@ -109,7 +114,8 @@ client_controller::error_type client_controller::add_station (station st) {
             return make_error_condition (base_already_set);
         }
         if (rovers_.find (st) != boost::end (rovers_)) {
-            return make_error_condition (station_exists);
+ 	    // already a rover
+	    return make_error_condition (station_is_rover);
         }
 
         // TODO: Kick off base station receiver
