@@ -64,19 +64,22 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(severity, "Severity", genesis::log_severity)
 BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "Timestamp", boost::posix_time::ptime)
 
 void init_logging () {
+    boost::log::formatter fmt =
+       expr::stream
+       << std::setw (8) << std::left << severity
+       << " [" << timestamp << "] "
+       << expr::smessage;
+
     boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend> >
        sink = add_console_log();
 #ifndef GENESIS_DEBUG
     sink->set_filter(severity >= debug);
 #endif
-    sink->set_formatter (
-       expr::stream
-       << std::setw (8) << std::left << severity
-       << " [" << timestamp << "] "
-       << expr::smessage);
 
+    sink->set_formatter (fmt);
     sink->locked_backend ()->auto_flush (true);
-    add_file_log ("genesis.log");
+
+    add_file_log ("genesis.log")->set_formatter (fmt);
     add_common_attributes ();
     boost::log::core::get ()->add_global_attribute("Timestamp",
 						   attrs::local_clock());
