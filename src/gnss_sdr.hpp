@@ -1,6 +1,6 @@
 /*!
- * \file error.hpp
- * \brief Defines custom error codes for Genesis.
+ * \file gnss_sdr.hpp
+ * \brief Interface to GNSS-SDR that runs in the Genesis process.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,35 +26,21 @@
  *
  * -------------------------------------------------------------------------
  */
-
-#include "error.hpp"
+#ifndef GENESIS_GNSS_SDR_HPP
+#define GENESIS_GNSS_SDR_HPP
 
 namespace genesis {
 
-const boost::array <std::string, max_error> error_category::messages_ = {{
-        "Success",
-        "Invalid packet length",
-        "Invalid station",
-        "Unknown station type",
-        "Base station is already set",
-        "The specified rover already exists",
-        "The specified station was not found",
-        "Already running",
-	"The specified station is a base station",
-	"The specified station is a rover"
-    }};
+/*!
+ * \brief Class starts a GNSS-SDR Controller thread.
+ */
+class gnss_sdr {
+public:
 
-const char *error_category::name () const BOOST_SYSTEM_NOEXCEPT {
-    return "genesis";
-}
+private:
 
-std::string error_category::message (int ev) const {
-    if (ev < 0 || ev >= static_cast<int> (messages_.size ())) {
-        return "Unknown error";
-    }
-    else {
-        return messages_[ev];
-    }
-}
+};
 
 }
+
+#endif // GENESIS_GNSS_SDR_HPP

@@ -1,6 +1,6 @@
 /*!
- * \file error.hpp
- * \brief Defines custom error codes for Genesis.
+ * \file calibrator.hpp
+ * \brief Interface for remote antenna frequency shift calibration.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,35 +26,19 @@
  *
  * -------------------------------------------------------------------------
  */
+#ifndef GENESIS_CALIBRATE_HPP
+#define GENESIS_CALIBRATE_HPP
 
-#include "error.hpp"
+#include <string>
 
 namespace genesis {
 
-const boost::array <std::string, max_error> error_category::messages_ = {{
-        "Success",
-        "Invalid packet length",
-        "Invalid station",
-        "Unknown station type",
-        "Base station is already set",
-        "The specified rover already exists",
-        "The specified station was not found",
-        "Already running",
-	"The specified station is a base station",
-	"The specified station is a rover"
-    }};
-
-const char *error_category::name () const BOOST_SYSTEM_NOEXCEPT {
-    return "genesis";
-}
-
-std::string error_category::message (int ev) const {
-    if (ev < 0 || ev >= static_cast<int> (messages_.size ())) {
-        return "Unknown error";
-    }
-    else {
-        return messages_[ev];
-    }
-}
+/*!
+ * \brief Class reads samples from remote antenna and calculates the
+ * apparent doppler shift.
+ */
+extern double calibrate (const std::string &address, unsigned short port);
 
 }
+
+#endif // GENESIS_CALIBRATE_HPP
