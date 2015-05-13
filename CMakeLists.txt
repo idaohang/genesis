@@ -18,8 +18,24 @@
 cmake_minimum_required (VERSION 2.8)
 project (genesis CXX)
 
+include(ExternalProject)
+
+# Build gnss-sdr
+ExternalProject_Add(gnss-sdr
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gnss-sdr
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gnss-sdr
+  BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/gnss-sdr/build
+  DOWNLOAD_COMMAND ""
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
+  INSTALL_COMMAND ""
+  BUILD_COMMAND make
+  INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/gnss-sdr/install)
+
+# Find Boost
 find_package(Boost COMPONENTS system thread date_time log REQUIRED)
 
+# Compiler flags
 set (MY_CXX_FLAGS_DEBUG "-DGENESIS_DEBUG")
 
 if(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
