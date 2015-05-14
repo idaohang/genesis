@@ -29,16 +29,41 @@
 
 #include "log.hpp"
 #include "service.hpp"
+#include <gflags/gflags.h>
+#include <string>
+#include <boost/filesystem.hpp>
 
-int main () {
+DEFINE_string (gnss_sdr_config_file,
+	       "./gnss-sdr.conf",
+	       "The GNSS-SDR configuration file to use.");
+
+boost::filesystem::path GNSS_SDR_CONFIG_FILE;
+
+int main (int argc, char *argv[]) {
+   const std::string intro_help(
+      "Copyright (C) Anthony Arnold 2015.\n"
+"Genesis is a realtime multi-station GNSS receiver.\n"
+"This program comes with ABSOLUTELY NO WARRANTY\n"
+"See LICENSE file to see a copy of the General Public License\n\n");
+
+    google::SetUsageMessage(intro_help);
+    google::ParseCommandLineFlags(&argc, &argv, true);
+
     genesis::init_logging ();
     genesis::logger lg;
+
+    GNSS_SDR_CONFIG_FILE =
+       boost::filesystem::absolute (FLAGS_gnss_sdr_config_file);
+    BOOST_LOG_SEV (lg, genesis::debug)
+       << "Using "
+       << GNSS_SDR_CONFIG_FILE
+       << " for gnss-sdr config";
 
     genesis::service service;
 
     boost::system::error_condition ec = service.run ("./genesis.socket",
                                                      "239.255.255.1");
     if (ec) {
-        std::cerr << ec << std::endl;
+       BOOST_LOG_SEV (lg, genesis::critical) << "Failed to run: " << ec.message();
     }
 }

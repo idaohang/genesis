@@ -32,10 +32,19 @@
 #include "error.hpp"
 #include <boost/move/algorithm.hpp>
 #include <boost/range.hpp>
+#include <sys/types.h>
+#include <signal.h>
+#include <boost/foreach.hpp>
 
 namespace genesis {
 
 namespace detail {
+
+void kill (const station & st) {
+   if (st.get_pid ()) {
+      ::kill (st.get_pid (), SIGKILL);
+   }
+}
 
 typedef client_controller::error_type error_type;
 using namespace boost::system::errc;
@@ -78,12 +87,15 @@ client_controller::client_controller()
 
 client_controller::~client_controller()
 {
-    // TODO: Shutdown
+    detail::kill (base_);
+    BOOST_FOREACH (const station &st, rovers_) {
+        detail::kill (st);
+    }
 }
 
 
 client_controller::error_type client_controller::add_station (
-    const station &st)
+   const station &st)
 {
     using namespace std;
 
@@ -122,9 +134,14 @@ client_controller::remove_station (const station &st) {
         return reset_base ();
     }
 
-    if (!rovers_.erase (st)) {
-        // Not found
-        return make_error_condition (station_not_found);
+    auto found = rovers_.find (st);
+    if (found != std::end (rovers_)) {
+       detail::kill (*found);
+       rovers_.erase (found);
+    }
+    else {
+       // Not found
+       return make_error_condition (station_not_found);
     }
     return error_type ();
 }
@@ -134,6 +151,9 @@ bool client_controller::has_base () const {
 }
 
 client_controller::error_type client_controller::reset_base () {
+    if (has_base ()) {
+       detail::kill (base_);
+    }
     base_ = station ();
     return error_type ();
 }

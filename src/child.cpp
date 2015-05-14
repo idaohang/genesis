@@ -30,9 +30,11 @@
 #include "error.hpp"
 #include "child.hpp"
 #include "station.hpp"
+#include "calibrate.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/bind.hpp>
+#include <glog/logging.h>
 
 namespace genesis {
 
@@ -69,6 +71,11 @@ child::error_type child::run (const station &st,
     if (ec) {
         return to_error_condition (ec);
     }
+
+    google::InitGoogleLogging ("genesis");
+
+    calibrate (st.get_address (),
+	       st.get_port ());
 
     // TODO: Start gnss-sdr
     sleep (3);

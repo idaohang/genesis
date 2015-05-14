@@ -237,7 +237,8 @@ void service::handle_packet () {
 
         io_service_.notify_fork (boost::asio::io_service::fork_prepare);
 
-        if (fork () == 0) {
+	st.set_pid (fork ());
+        if (st.get_pid () == 0) {
             fork_child (st);
         }
         else {
@@ -287,11 +288,21 @@ void service::fork_child (const station &st) {
 }
 
 void service::fork_parent (const station &st) {
+
     // parent accepts child client and starts a new session
     io_service_.notify_fork (boost::asio::io_service::fork_parent);
     boost::log::core::get ()->set_logging_enabled (true);
 
-    BOOST_LOG_SEV (lg_, info) << "New child spawned for connection to "
+
+    if (st.get_pid () < 0) {
+       // Failed
+       BOOST_LOG_SEV (lg_, error) << "fork failed: " << st.get_pid ();
+       return;
+    }
+
+    BOOST_LOG_SEV (lg_, info) << "New child "
+			      << st.get_pid ()
+			      << " spawned for connection to "
                               << st.get_address ();
 
     boost::system::error_code err;

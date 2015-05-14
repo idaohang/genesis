@@ -79,6 +79,16 @@ if(NOT GNURADIO_TRELLIS_FOUND)
   message(FATAL_ERROR "*** gnuradio-trellis 3.7 or later is required to build Genesis")
 endif()
 
+find_package(UHD)
+if(NOT UHD_FOUND)
+  set(ENABLE_UHD OFF)
+else(NOT UHD_FOUND)
+  if(NOT GNURADIO_UHD_FOUND)
+    message(FATAL_ERROR "*** gnuradio-uhd 3.7 or later is required to build Genesis")
+  endif(NOT GNURADIO_UHD_FOUND)
+  set(ENABLE_UHD ON)
+endif(NOT UHD_FOUND)
+
 find_package(Volk)
 if(NOT VOLK_FOUND)
   message(FATAL_ERROR "*** VOLK is required to build Genesis")
@@ -102,13 +112,12 @@ ExternalProject_Add(gnss-sdr
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gnss-sdr
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gnss-sdr
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/gnss-sdr/build
-  CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  CMAKE_ARGS -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DENABLE_OSMOSDR=OFF -DENABLE_UHD=OFF
   DOWNLOAD_COMMAND ""
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
   INSTALL_COMMAND ""
-  BUILD_COMMAND make
-  INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/gnss-sdr/install)
+  BUILD_COMMAND make)
 
 ExternalProject_Get_Property(gnss-sdr binary_dir)
 set(GNSS_SDR_BINARY_DIR ${binary_dir})
