@@ -40,6 +40,8 @@
 #include "packet.hpp"
 #include <set>
 #include <string>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 namespace genesis {
 
@@ -52,6 +54,7 @@ public:
    typedef boost::system::error_condition error_type;
 
    service ();
+   ~service ();
 
    error_type run (const std::string &socket_file,
                    const std::string &multicast_address);
@@ -64,12 +67,13 @@ private:
                             size_t bytes_received);
 
    void handle_packet ();
+   void prepare_fork ();
+   void child_fork ();
+   void parent_fork (int pid);
+   void start_station (const station &st);
 
    void start_signal_wait ();
    void handle_signal_wait ();
-
-   void fork_child (const station &st);
-   void fork_parent (const station &st);
 
    void on_stdin (const boost::system::error_code &error,
 		  size_t length);
@@ -106,7 +110,12 @@ private:
    boost::shared_ptr <client_controller> controller_;
 
    // Logging members
-   logger lg_;
+   logger_mt lg_;
+
+   // to kill
+   std::set <int> to_kill_;
+   boost::mutex mutex_;
+   typedef boost::lock_guard <boost::mutex> scoped_lock;
 };
 
 }

@@ -33,37 +33,90 @@
 #include <string>
 #include <boost/filesystem.hpp>
 
-DEFINE_string (gnss_sdr_config_file,
-	       "./gnss-sdr.conf",
-	       "The GNSS-SDR configuration file to use.");
+namespace fs = boost::filesystem;
 
-boost::filesystem::path GNSS_SDR_CONFIG_FILE;
+DEFINE_string (config_file,
+               "./gnss-sdr.conf",
+               "The GNSS-SDR configuration file to use.");
+DEFINE_string (cal_config_file,
+               "./front-end-cal.conf",
+               "The front-end-cal configuration file to use.");
+DEFINE_string (gnss_sdr,
+               "/usr/bin/gnss-sdr",
+               "The gnss-sdr executable");
+DEFINE_string (front_end_cal,
+               "/usr/bin/front-end-cal",
+               "The front-end-cal executable");
+
+fs::path GNSS_SDR_CONFIG_FILE,
+   FRONT_END_CAL_CONFIG_FILE,
+   GNSS_SDR_EXECUTABLE,
+   FRONT_END_CAL_EXECUTABLE;
 
 int main (int argc, char *argv[]) {
-   const std::string intro_help(
-      "Copyright (C) Anthony Arnold 2015.\n"
-"Genesis is a realtime multi-station GNSS receiver.\n"
-"This program comes with ABSOLUTELY NO WARRANTY\n"
-"See LICENSE file to see a copy of the General Public License\n\n");
+  const std::string intro_help
+    ("Copyright (C) Anthony Arnold 2015.\n"
+     "Genesis is a realtime multi-station GNSS receiver.\n"
+     "This program comes with ABSOLUTELY NO WARRANTY\n"
+     "See LICENSE file to see a copy of the General Public License\n\n");
 
-    google::SetUsageMessage(intro_help);
-    google::ParseCommandLineFlags(&argc, &argv, true);
+  google::SetUsageMessage(intro_help);
+  google::ParseCommandLineFlags(&argc, &argv, true);
 
-    genesis::init_logging ();
-    genesis::logger lg;
+  genesis::init_logging ();
+  genesis::logger lg;
 
-    GNSS_SDR_CONFIG_FILE =
-       boost::filesystem::absolute (FLAGS_gnss_sdr_config_file);
-    BOOST_LOG_SEV (lg, genesis::debug)
-       << "Using "
-       << GNSS_SDR_CONFIG_FILE
-       << " for gnss-sdr config";
+  GNSS_SDR_CONFIG_FILE = FLAGS_config_file;
+  BOOST_LOG_SEV (lg, genesis::debug)
+    << "Using "
+    << GNSS_SDR_CONFIG_FILE
+    << " for gnss-sdr config";
 
-    genesis::service service;
+  if (!fs::exists (GNSS_SDR_CONFIG_FILE)) {
+    BOOST_LOG_SEV (lg, genesis::critical) << "Config file not found";
+    return 1;
+  }
 
-    boost::system::error_condition ec = service.run ("./genesis.socket",
-                                                     "239.255.255.1");
-    if (ec) {
-       BOOST_LOG_SEV (lg, genesis::critical) << "Failed to run: " << ec.message();
-    }
+
+  FRONT_END_CAL_CONFIG_FILE =FLAGS_cal_config_file;
+  BOOST_LOG_SEV (lg, genesis::debug)
+    << "Using "
+    << FRONT_END_CAL_CONFIG_FILE
+    << " for front-end-cal config";
+
+  if (!fs::exists (FRONT_END_CAL_CONFIG_FILE)) {
+    BOOST_LOG_SEV (lg, genesis::critical) << "Cal config file not found";
+    return 1;
+  }
+
+  GNSS_SDR_EXECUTABLE = FLAGS_gnss_sdr;
+  BOOST_LOG_SEV (lg, genesis::debug)
+    << "Using "
+    << GNSS_SDR_EXECUTABLE
+    << " for gnss-sdr executable";
+
+  if (!fs::exists (GNSS_SDR_EXECUTABLE)) {
+    BOOST_LOG_SEV (lg, genesis::critical) << "gnss-sdr not found";
+    return 1;
+  }
+
+  FRONT_END_CAL_EXECUTABLE = FLAGS_front_end_cal;
+  BOOST_LOG_SEV (lg, genesis::debug)
+    << "Using "
+    << FRONT_END_CAL_EXECUTABLE
+    << " for front-end-cal executable";
+
+  if (!fs::exists (FRONT_END_CAL_EXECUTABLE)) {
+    BOOST_LOG_SEV (lg, genesis::critical) << "front-end-cal not found";
+    return 1;
+  }
+
+  // Start the service
+  genesis::service service;
+
+  boost::system::error_condition ec = service.run ("./genesis.socket",
+                                                   "239.255.255.1");
+  if (ec) {
+    BOOST_LOG_SEV (lg, genesis::critical) << "Failed to run: " << ec.message();
+  }
 }

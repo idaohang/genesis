@@ -37,11 +37,13 @@ const boost::array <std::string, max_error> error_category::messages_ = {{
         "Invalid station",
         "Unknown station type",
         "Base station is already set",
-        "The specified rover already exists",
+        "The specified rover already existims",
         "The specified station was not found",
         "Already running",
 	"The specified station is a base station",
-	"The specified station is a rover"
+	"The specified station is a rover",
+        "IF bias not found",
+        "File not found"
     }};
 
 const char *error_category::name () const BOOST_SYSTEM_NOEXCEPT {

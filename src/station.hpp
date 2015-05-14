@@ -46,12 +46,11 @@ public:
       STATION_TYPE_ROVER = 2
    };
 
-
    /*!
     * \brief Construct an empty station.
     */
    station ()
-       : type_ (STATION_TYPE_UNKNOWN), port_ (0), pid_ (0)
+       : type_ (STATION_TYPE_UNKNOWN), port_ (0)
       {
       }
 
@@ -65,9 +64,6 @@ public:
       : type_ (type), address_ (address), port_ (port)
       {
       }
-
-   inline pid_t get_pid () const { return pid_; }
-   inline void set_pid (pid_t pid) { pid_ = pid; }
 
    inline station_type get_type () const {
        return type_;
@@ -86,7 +82,6 @@ private:
    station_type type_; // base station or rover
    std::string address_; // IPv4 or 6 address
    unsigned short port_; // The port to connect to
-   pid_t pid_; // The process ID of the child
 };
 
 

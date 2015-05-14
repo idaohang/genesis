@@ -1,7 +1,6 @@
 /*!
- * \file client_process.hpp
- * \brief Defines the interface for running a child process
- * for a station.
+ * \file calibrator.hpp
+ * \brief Interface for a front end calibration service.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -27,46 +26,55 @@
  *
  * -------------------------------------------------------------------------
  */
+#ifndef GENESIS_CALIBRATOR_HPP
+#define GENESIS_CALIBRATOR_HPP
 
-#ifndef GENESIS_CLIENT_PROCESS_HPP
-#define GENESIS_CLIENT_PROCESS_HPP
-
-#include "client_controller.hpp"
 #include "error.hpp"
 #include <boost/move/core.hpp>
+#include <boost/function.hpp>
+#include "station.hpp"
+#include "log.hpp"
 
 namespace genesis {
 
 /*!
- * \brief Class takes a station definition and starts a subprocess
- * to perform GNSS calculations.
+ * \brief This class attempts to determine the IF of the
+ * front end.
  */
-class client_process {
+class calibrator {
+   BOOST_MOVABLE_BUT_NOT_COPYABLE (calibrator)
 public:
-   BOOST_MOVABLE_BUT_NOT_COPYABLE (client_process)
-
    typedef boost::system::error_condition error_type;
 
-   inline client_process (client_controller_ptr controller, const station &st)
-      : controller_ (controller), station_ (st)
+   inline calibrator ()
+      : IF_ (0)
    {
    }
 
-   virtual error_type start () = 0;
-
-   virtual error_type stop () = 0;
-
-protected:
-
-   inline client_controller_ptr get_controller () const {
-      return controller_;
+   template <typename Ffork, typename Fcfork, typename Fpfork>
+   error_type calibrate (
+      const station &st,
+      Ffork prepare_fork,
+      Fcfork child_fork,
+      Fpfork parent_fork)
+   {
+      return calibrate_impl (st, prepare_fork, child_fork, parent_fork);
    }
 
+   inline double get_IF () const {
+      return IF_;
+   }
 private:
-   client_controller_ptr controller_;
-   station station_;
+   error_type calibrate_impl (
+      const station &st,
+      boost::function <void ()> prepare_fork,
+      boost::function <void ()> child_fork,
+      boost::function <void (int)> parent_fork);
+private:
+   double IF_;
+   logger lg_;
 };
 
 }
 
-#endif // GENESIS_CLIENT_PROCESS_HPP
+#endif // GENESIS_CALIBRATOR_HPP

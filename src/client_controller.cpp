@@ -30,49 +30,39 @@
 
 #include "client_controller.hpp"
 #include "error.hpp"
-#include <boost/move/algorithm.hpp>
 #include <boost/range.hpp>
-#include <sys/types.h>
-#include <signal.h>
-#include <boost/foreach.hpp>
 
 namespace genesis {
 
 namespace detail {
 
-void kill (const station & st) {
-   if (st.get_pid ()) {
-      ::kill (st.get_pid (), SIGKILL);
-   }
-}
-
 typedef client_controller::error_type error_type;
 using namespace boost::system::errc;
 
 bool validate_station (const station &st) {
-    if (st.get_type () == station::STATION_TYPE_UNKNOWN) {
-        return false;
-    }
+   if (st.get_type () == station::STATION_TYPE_UNKNOWN) {
+      return false;
+   }
 
-    if (st.get_address ().length () == 0) {
-        return false;
-    }
+   if (st.get_address ().length () == 0) {
+      return false;
+   }
 
-    if (st.get_port () == 0) {
-        return false;
-    }
+   if (st.get_port () == 0) {
+      return false;
+   }
 
-    return true;
+   return true;
 }
 
 struct find_by_address {
    find_by_address (const std::string &address)
-       : address_ (address)
-      {
-      }
+      : address_ (address)
+   {
+   }
 
    bool operator() (const station &st) {
-       return st.get_address () == address_;
+      return st.get_address () == address_;
    }
 
 private:
@@ -87,75 +77,67 @@ client_controller::client_controller()
 
 client_controller::~client_controller()
 {
-    detail::kill (base_);
-    BOOST_FOREACH (const station &st, rovers_) {
-        detail::kill (st);
-    }
 }
 
 
 client_controller::error_type client_controller::add_station (
    const station &st)
 {
-    using namespace std;
+   using namespace std;
 
-    if (!detail::validate_station (st)) {
-        return make_error_condition (invalid_station);
-    }
+   if (!detail::validate_station (st)) {
+      return make_error_condition (invalid_station);
+   }
 
-    if (st.get_type () == station::STATION_TYPE_ROVER) {
-        if (st.get_address () == base_.get_address ()) {
-            // already the base station
-            return make_error_condition (station_is_base);
-        }
-        if (!rovers_.insert (st).second) {
-            // already inserted
-            return make_error_condition (station_exists);
-        }
-    }
-    else {
-        if (has_base ()) {
-            return make_error_condition (base_already_set);
-        }
-        if (rovers_.find (st) != boost::end (rovers_)) {
-            // already a rover
-            return make_error_condition (station_is_rover);
-        }
+   scoped_lock lock (mutex_);
+   if (st.get_type () == station::STATION_TYPE_ROVER) {
+      if (st.get_address () == base_.get_address ()) {
+         // already the base station
+         return make_error_condition (station_is_base);
+      }
+      if (!rovers_.insert (st).second) {
+         // already inserted
+         return make_error_condition (station_exists);
+      }
+   }
+   else {
+      if (has_base ()) {
+         return make_error_condition (base_already_set);
+      }
+      if (rovers_.find (st) != boost::end (rovers_)) {
+         // already a rover
+         return make_error_condition (station_is_rover);
+      }
 
-        base_ = st;
-    }
+      base_ = st;
+   }
 
-    return error_type ();
+   return error_type ();
 }
 
 client_controller::error_type
 client_controller::remove_station (const station &st) {
-    if (base_.get_address () == st.get_address ()) {
-        return reset_base ();
-    }
+   scoped_lock lock (mutex_);
+   if (base_.get_address () == st.get_address ()) {
+      return reset_base ();
+   }
 
-    auto found = rovers_.find (st);
-    if (found != std::end (rovers_)) {
-       detail::kill (*found);
-       rovers_.erase (found);
-    }
-    else {
-       // Not found
-       return make_error_condition (station_not_found);
-    }
-    return error_type ();
+   if (!rovers_.erase (st)) {
+      // Not found
+      return make_error_condition (station_not_found);
+   }
+   return error_type ();
 }
 
 bool client_controller::has_base () const {
-    return detail::validate_station (base_);
+   scoped_lock lock (mutex_);
+   return detail::validate_station (base_);
 }
 
 client_controller::error_type client_controller::reset_base () {
-    if (has_base ()) {
-       detail::kill (base_);
-    }
-    base_ = station ();
-    return error_type ();
+   scoped_lock lock (mutex_);
+   base_ = station ();
+   return error_type ();
 }
 
 }

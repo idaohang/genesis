@@ -1,3 +1,0 @@
-[submodule "gnss-sdr"]
-	path = gnss-sdr
-	url = https://github.com/anthony-arnold/gnss-sdr

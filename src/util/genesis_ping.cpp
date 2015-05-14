@@ -48,6 +48,7 @@ struct sender {
           unsigned short *port = reinterpret_cast <unsigned short *>(
               &data_[0]);
           *port = 1234;
+          *port = boost::asio::detail::socket_ops::host_to_network_short (*port);
 
           unsigned *type = reinterpret_cast <unsigned *>(
               &data_[genesis::packet::PORT_SIZE]);

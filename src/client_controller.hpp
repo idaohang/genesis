@@ -35,6 +35,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/move/core.hpp>
 #include <boost/system/error_code.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 #include <set>
 #include "station.hpp"
 
@@ -66,6 +68,8 @@ private:
 
    station base_;
    std::set<station> rovers_;
+   mutable boost::recursive_mutex mutex_;
+   typedef boost::lock_guard<boost::recursive_mutex> scoped_lock;
 };
 
 }
