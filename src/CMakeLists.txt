@@ -36,6 +36,7 @@ include_directories (
   ${GFlags_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
   ${OPENSSL_INCLUDE_DIR}
+  ${ARMADILLO_INCLUDE_DIRS}
   ${GNSS_SDR_SOURCE_DIR}/src/utils/front-end-cal
   ${GNSS_SDR_SOURCE_DIR}/src/core/system_parameters
   ${GNSS_SDR_SOURCE_DIR}/src/core/interfaces

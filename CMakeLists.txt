@@ -138,9 +138,14 @@ endif (NOT GLOG_FOUND OR ${LOCAL_GFLAGS})
 
 if(NOT ARMADILLO_FOUND)
   find_library(GFORTRAN NAMES gfortran)
+  if (NOT GFORTRAN)
+    message (STATUS "gfortran was not found and will not be linked")
+    set (GFORTRAN "")
+  endif (NOT GFORTRAN)
   set (armadillo_RELEASE 5.100.1)
-  set (ARMADILLO_INCLUDE_DIRS ${GNSS_SDR_BINARY_DIR}/armadillo-${armadillo_RELEASE}/include)
-  set(ARMADILLO_LIBRARIES ${BLAS} ${LAPACK} ${GFORTRAN} ${GNSS_SDR_BINARY_DIR}/armadillo-${armadillo_RELEASE}/${CMAKE_FIND_LIBRARY_PREFIXES}armadillo.a)
+  set (ARMADILLO_SRC_DIR ${GNSS_SDR_BINARY_DIR}/armadillo-${armadillo_RELEASE}/src/armadillo-${armadillo_RELEASE})
+  set (ARMADILLO_INCLUDE_DIRS ${ARMADILLO_SRC_DIR}/include)
+  set(ARMADILLO_LIBRARIES ${BLAS} ${LAPACK} ${GFORTRAN} ${ARMADILLO_SRC_DIR}/${CMAKE_FIND_LIBRARY_PREFIXES}armadillo.a)
 endif(NOT ARMADILLO_FOUND)
 
 
