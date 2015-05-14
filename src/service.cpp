@@ -49,6 +49,8 @@ service::service ()
     : acceptor_ (io_service_),
       signal_ (io_service_, SIGCHLD),
       mcast_socket_ (io_service_),
+      stdin_ (io_service_, ::dup (STDIN_FILENO)),
+      stdin_buf_ ((size_t)MAX_STDIN),
       controller_ (boost::make_shared<client_controller> ())
 {
     start_signal_wait ();
@@ -63,6 +65,14 @@ service::error_type service::run (const std::string &socket_file,
         ec = setup_listener (multicast_address);
 
         if (!ec) {
+ 	    // handle input
+	   boost::asio::async_read_until (
+	      stdin_, stdin_buf_, '\n',
+              boost::bind (&service::on_stdin,
+			   this,
+			   boost::asio::placeholders::error,
+			   boost::asio::placeholders::bytes_transferred));
+
             // start running
             io_service_.run ();
         }
@@ -179,8 +189,7 @@ void service::handle_udp_receive (const boost::system::error_code &error,
         // Damn
         BOOST_LOG_SEV (lg_, critical) <<
            "Error received during receive: " << error.message ();
-
-        // TODO: Signal shutdown
+	shutdown ();
     }
     else {
         if (bytes_received != MAX_DATA_LENGTH) {
@@ -292,10 +301,46 @@ void service::fork_parent (const station &st) {
     if (err) {
         BOOST_LOG_SEV (lg_, error) << "Error opening connection "
            "to child process: " << err.message ();
+	shutdown ();
     }
     else {
         new_session->start ();
     }
 }
 
+
+void service::on_stdin (const boost::system::error_code &ec,
+			size_t length)
+{
+   size_t line_len = length;
+   std::string s;
+
+   if (!ec) {
+      line_len--;
+   }
+   else if (ec != boost::asio::error::not_found) {
+      BOOST_LOG_SEV (lg_, error) << "Error reading standard input: "
+				<< ec.message ();
+      shutdown ();
+      return;
+   }
+
+   stdin_buf_.sgetn (&stdin_cstr_[0], line_len);
+   stdin_buf_.consume (length - line_len);
+   s.assign (&stdin_cstr_[0], line_len);
+
+   // TODO: More control messages can go here
+   // May need to refactor out to own class
+   if (s == "q" || s == "Q") {
+      // quit
+      BOOST_LOG (lg_) << "Received shutdown signal.";
+      shutdown ();
+   }
+}
+
+void service::shutdown () {
+   BOOST_LOG_SEV (lg_, trace) << "Shutting down.";
+   io_service_.stop ();
+   // TODO: cleanly shutdown children
+}
 }

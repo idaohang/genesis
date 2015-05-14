@@ -70,6 +70,11 @@ private:
 
    void fork_child (const station &st);
    void fork_parent (const station &st);
+
+   void on_stdin (const boost::system::error_code &error,
+		  size_t length);
+
+   void shutdown ();
 private:
    enum {
        MAX_DATA_LENGTH = packet::FIXED_DATA_SIZE
@@ -88,6 +93,14 @@ private:
    boost::array <char, MAX_DATA_LENGTH> data_;
    boost::asio::ip::udp::socket mcast_socket_;
    boost::asio::ip::udp::endpoint sender_endpoint_;
+
+   // stdio members
+   enum {
+      MAX_STDIN = 128
+   };
+   boost::asio::posix::stream_descriptor stdin_;
+   boost::asio::streambuf stdin_buf_;
+   boost::array <char, MAX_STDIN> stdin_cstr_;
 
    // Station members
    boost::shared_ptr <client_controller> controller_;
