@@ -1,5 +1,5 @@
 /*!
- * \file ping.cpp
+ * \file genesis_ping.cpp
  * \brief Test UDP comms by sending a packet to Genesis.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *

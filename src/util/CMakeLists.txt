@@ -16,8 +16,8 @@
 # along with Genesis. If not, see <http://www.gnu.org/licenses/>.
 #
 
-set (PING_SOURCES
-  ping.cpp)
+set (GENESIS_PING_SOURCES
+  genesis_ping.cpp)
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -25,7 +25,7 @@ include_directories (
   ${Boost_INCLUDE_DIRS}
   )
 
-add_executable (ping ${PING_SOURCES})
+add_executable (genesis_ping ${GENESIS_PING_SOURCES})
 target_link_libraries (
-  ping
+  genesis_ping
   ${Boost_LIBRARIES})
