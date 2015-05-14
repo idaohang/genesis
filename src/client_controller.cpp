@@ -117,21 +117,15 @@ client_controller::error_type client_controller::add_station (
 }
 
 client_controller::error_type
-client_controller::remove_station (const std::string &address) {
-    typedef std::set<station>::const_iterator iterator_type;
-
-    if (base_.get_address () == address) {
+client_controller::remove_station (const station &st) {
+    if (base_.get_address () == st.get_address ()) {
         return reset_base ();
     }
-    iterator_type found = std::find_if (boost::begin (rovers_),
-                                        boost::end (rovers_),
-                                        detail::find_by_address (address));
-    if (found == boost::end (rovers_)) {
+
+    if (!rovers_.erase (st)) {
         // Not found
         return make_error_condition (station_not_found);
     }
-
-    rovers_.erase (found);
     return error_type ();
 }
 

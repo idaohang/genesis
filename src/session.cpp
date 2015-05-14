@@ -49,7 +49,7 @@ void session::handle_read(const boost::system::error_code& error,
     else {
         socket_.close ();
         BOOST_LOG (lg_) << "Removing station " << station_.get_address ();
-        controller_->remove_station (station_.get_address ());
+        controller_->remove_station (station_);
     }
 }
 
