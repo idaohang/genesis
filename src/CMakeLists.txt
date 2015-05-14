@@ -27,6 +27,7 @@ set (GENESIS_SOURCES
   child.cpp
   session.cpp
   calibrate.cpp
+  gnss_sdr_globals.cpp
   ${GNSS_SDR_SOURCE_DIR}/src/utils/front-end-cal/front_end_cal.cc)
 
 include_directories (

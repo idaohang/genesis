@@ -44,61 +44,14 @@
 #include <gnuradio/blocks/head.h>
 #include <gnuradio/blocks/file_source.h>
 #include <gnuradio/blocks/file_sink.h>
-#include "concurrent_map.h"
 #include "file_configuration.h"
 #include "gps_l1_ca_pcps_acquisition_fine_doppler.h"
 #include "gnss_signal.h"
 #include "gnss_synchro.h"
 #include "gnss_block_factory.h"
-#include "gps_navigation_message.h"
-#include "gps_ephemeris.h"
-#include "gps_almanac.h"
-#include "gps_iono.h"
-#include "gps_utc_model.h"
-#include "galileo_ephemeris.h"
-#include "galileo_almanac.h"
-#include "galileo_iono.h"
-#include "galileo_utc_model.h"
-#include "sbas_telemetry_data.h"
-#include "sbas_ionospheric_correction.h"
-#include "sbas_satellite_correction.h"
-#include "sbas_ephemeris.h"
-#include "sbas_time.h"
 #include "gnss_sdr_supl_client.h"
 #include "front_end_cal.h"
-
-concurrent_queue<Gps_Ephemeris> global_gps_ephemeris_queue;
-concurrent_queue<Gps_Iono> global_gps_iono_queue;
-concurrent_queue<Gps_Utc_Model> global_gps_utc_model_queue;
-concurrent_queue<Gps_Almanac> global_gps_almanac_queue;
-concurrent_queue<Gps_Acq_Assist> global_gps_acq_assist_queue;
-
-concurrent_map<Gps_Ephemeris> global_gps_ephemeris_map;
-concurrent_map<Gps_Iono> global_gps_iono_map;
-concurrent_map<Gps_Utc_Model> global_gps_utc_model_map;
-concurrent_map<Gps_Almanac> global_gps_almanac_map;
-concurrent_map<Gps_Acq_Assist> global_gps_acq_assist_map;
-
-// For GALILEO NAVIGATION
-concurrent_queue<Galileo_Ephemeris> global_galileo_ephemeris_queue;
-concurrent_queue<Galileo_Iono> global_galileo_iono_queue;
-concurrent_queue<Galileo_Utc_Model> global_galileo_utc_model_queue;
-concurrent_queue<Galileo_Almanac> global_galileo_almanac_queue;
-
-concurrent_map<Galileo_Ephemeris> global_galileo_ephemeris_map;
-concurrent_map<Galileo_Iono> global_galileo_iono_map;
-concurrent_map<Galileo_Utc_Model> global_galileo_utc_model_map;
-concurrent_map<Galileo_Almanac> global_galileo_almanac_map;
-
-// For SBAS CORRECTIONS
-concurrent_queue<Sbas_Raw_Msg> global_sbas_raw_msg_queue;
-concurrent_queue<Sbas_Ionosphere_Correction> global_sbas_iono_queue;
-concurrent_queue<Sbas_Satellite_Correction> global_sbas_sat_corr_queue;
-concurrent_queue<Sbas_Ephemeris> global_sbas_ephemeris_queue;
-
-concurrent_map<Sbas_Ionosphere_Correction> global_sbas_iono_map;
-concurrent_map<Sbas_Satellite_Correction> global_sbas_sat_corr_map;
-concurrent_map<Sbas_Ephemeris> global_sbas_ephemeris_map;
+#include "gnss_sdr_globals.hpp"
 
 bool stop;
 concurrent_queue<int> channel_internal_queue;
@@ -201,27 +154,10 @@ double calibrate (const std::string &address,
       GNSS_SDR_CONFIG_FILE.c_str ());
 
    // Override properties
-
-   // Set signal source to RTLTCP
-   configuration->set_property (
-      "SignalSource.implementation", "RtlTcp_Signal_Source");
    configuration->set_property (
       "SignalSource.address", address);
    configuration->set_property (
       "SignalSource.port", boost::lexical_cast<std::string> (port));
-
-   // Set input filter IF to 0
-   configuration->set_property (
-      "InputFilter.IF", "0");
-
-   // Use liberal acquisition settings
-   // We expect the rtl dongle to be within these bounds
-   configuration->set_property (
-      "Acquisition.doppler_max", "100000");
-   configuration->set_property (
-      "Acquisition.doppler_min", "-100000");
-   configuration->set_property (
-      "Acquisition.max_dwells", "15");
 
    // 2. Get SUPL information from server: Ephemeris record, assistance info and TOW
    front_end_cal.set_configuration (configuration);

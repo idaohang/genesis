@@ -171,7 +171,7 @@ find_package(Boost COMPONENTS
 set (MY_CXX_FLAGS_DEBUG "-DGENESIS_DEBUG")
 
 if(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
-  set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Wall -Wextra -pedantic -std=c++11")
+  set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Wall -Wextra -std=c++11")
   set(MY_CXX_FLAGS_RELEASE "${MY_CXX_FLAGS_RELEASE} -Wno-unused")
 endif(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
 
