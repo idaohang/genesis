@@ -276,11 +276,7 @@ void service::parent_fork (int pid) {
 void service::start_station (const station &st) {
    // Calibrate
    calibrator cal (io_service_);
-   error_type ec = cal.calibrate (
-      st,
-      boost::bind (&service::prepare_fork, this),
-      boost::bind (&service::child_fork, this),
-      boost::bind (&service::parent_fork, this, _1));
+   error_type ec = cal.calibrate (st, this);
 
    if (ec) {
       BOOST_LOG_SEV (lg_, error) << "Failed to calibrate station "

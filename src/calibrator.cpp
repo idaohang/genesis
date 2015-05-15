@@ -169,11 +169,8 @@ calibrator::error_type calibrator::read_if (int fd) {
    return make_error_condition (if_bias_not_found);
 }
 
-calibrator::error_type calibrator::calibrate_impl (
-   const station &st,
-   boost::function <void ()> prepare_fork,
-   boost::function <void ()> child_fork,
-   boost::function <void (int)> parent_fork)
+calibrator::error_type calibrator::calibrate (const station &st,
+					      fork_handler *handler)
 {
    boost::system::error_code ec;
    fs::path path (boost::algorithm::replace_all_copy (
@@ -206,38 +203,18 @@ calibrator::error_type calibrator::calibrate_impl (
    }
 
    // Execute front-end-cal
-   prepare_fork ();
-   int p[2];
-   pipe (p);
-
-   pid_t pid = fork ();
-   if (pid == 0) {
-      child_fork ();
-
-      while ((dup2(p[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
-      while ((dup2(p[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
-      close(p[1]);
-      close(p[0]);
-
-      fs::current_path (path, ec);
-      if (ec) {
-         exit (1);
-      }
-
-      execl(FRONT_END_CAL_EXECUTABLE.c_str (),
-            "front-end-cal",
-            "--config_file",
-            "front-end-cal.conf",
-            "-log_dir=./",
-            (char*)0);
-      perror ("execl");
-      exit (1);
-   }
-   parent_fork (pid);
-   close (p[1]);
+   std::vector<std::string> args;
+   args.push_back ("front-end-cal");
+   args.push_back ("--config_file");
+   args.push_back ("front-end-cal.conf");
+   args.push_back ("-log_dir=./");
+   int fd = forker::fork (handler,
+			  path,
+			  FRONT_END_CAL_EXECUTABLE,
+			  args);
 
    // In the parent - read the output from front-end-cal
-   et = read_if (p[0]);
+   et = read_if (fd);
    if (!et) {
       BOOST_LOG_SEV (lg_, debug) << "Saving IF bias";
       if (!detail::save_bias (path, IF_)) {

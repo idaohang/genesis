@@ -34,21 +34,22 @@
 #include <boost/asio.hpp>
 #include <boost/move/core.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 #include "client_controller.hpp"
 #include "error.hpp"
+#include "fork.hpp"
 #include "log.hpp"
 #include "packet.hpp"
 #include <set>
 #include <string>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
 
 namespace genesis {
 
 /*!
  * Class for operating the IO of Genesis.
  */
-class service {
+class service : public fork_handler {
    BOOST_MOVABLE_BUT_NOT_COPYABLE (service)
 public:
    typedef boost::system::error_condition error_type;
@@ -67,18 +68,22 @@ private:
                             size_t bytes_received);
 
    void handle_packet ();
-   void prepare_fork ();
-   void child_fork ();
-   void parent_fork (int pid);
    void start_station (const station &st);
 
+   // Child proceses
    void start_signal_wait ();
    void handle_signal_wait ();
 
+   // Commands
    void on_stdin (const boost::system::error_code &error,
 		  size_t length);
 
    void shutdown ();
+
+   // fork_handler
+   virtual void prepare_fork ();
+   virtual void child_fork ();
+   virtual void parent_fork (int pid);
 private:
    enum {
        MAX_DATA_LENGTH = packet::FIXED_DATA_SIZE

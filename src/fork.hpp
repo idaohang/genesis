@@ -1,6 +1,6 @@
 /*!
- * \file calibrator.hpp
- * \brief Interface for a front end calibration service.
+ * \file fork.hpp
+ * \brief An interface for forking.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,46 +26,43 @@
  *
  * -------------------------------------------------------------------------
  */
-#ifndef GENESIS_CALIBRATOR_HPP
-#define GENESIS_CALIBRATOR_HPP
+#ifndef GENESIS_FORK_HPP
+#define GENESIS_FORK_HPP
 
-#include "error.hpp"
-#include <boost/move/core.hpp>
-#include <boost/function.hpp>
-#include <boost/asio.hpp>
-#include "station.hpp"
-#include "log.hpp"
-#include "fork.hpp"
+#include <vector>
+#include <string>
+#include <boost/filesystem.hpp>
 
 namespace genesis {
 
 /*!
- * \brief This class attempts to determine the IF of the
- * front end.
+ * \brief Interface for a fork handler.
  */
-class calibrator : private forker {
-   BOOST_MOVABLE_BUT_NOT_COPYABLE (calibrator)
+class fork_handler {
 public:
-   typedef boost::system::error_condition error_type;
+   // Call this before forking
+   virtual void prepare_fork () = 0;
 
-   inline calibrator (boost::asio::io_service &io_service)
-      : io_service_ (io_service), IF_ (0)
-   {
-   }
+   // Call this after forking, in the child process
+   virtual void child_fork () = 0;
 
-   error_type calibrate (const station &st, fork_handler *handler);
-
-   inline double get_IF () const {
-      return IF_;
-   }
-private:
-   error_type read_if (int fd);
-private:
-   boost::asio::io_service &io_service_;
-   double IF_;
-   logger lg_;
+   // Call this after forking, in the parent process
+   virtual void parent_fork (int pid) = 0;
 };
 
+/*!
+ * \brief Class performs a fork/exec.
+ */
+class forker {
+public:
+
+   // Returns a file handle for a combined stdout/stderr stream.
+   int fork (fork_handler *handler,
+	     const boost::filesystem::path &dir,
+	     const boost::filesystem::path &cmd,
+	     const std::vector <std::string> &args);
+
+};
 }
 
-#endif // GENESIS_CALIBRATOR_HPP
+#endif // GENESIS_FORK_HPP

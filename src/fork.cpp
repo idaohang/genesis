@@ -1,6 +1,6 @@
 /*!
- * \file calibrator.hpp
- * \brief Interface for a front end calibration service.
+ * \file fork.cpp
+ * \brief An interface for forking.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,46 +26,48 @@
  *
  * -------------------------------------------------------------------------
  */
-#ifndef GENESIS_CALIBRATOR_HPP
-#define GENESIS_CALIBRATOR_HPP
-
-#include "error.hpp"
-#include <boost/move/core.hpp>
-#include <boost/function.hpp>
-#include <boost/asio.hpp>
-#include "station.hpp"
-#include "log.hpp"
 #include "fork.hpp"
+#include <sys/types.h>
+#include <unistd.h>
+#include <boost/filesystem.hpp>
 
 namespace genesis {
 
-/*!
- * \brief This class attempts to determine the IF of the
- * front end.
- */
-class calibrator : private forker {
-   BOOST_MOVABLE_BUT_NOT_COPYABLE (calibrator)
-public:
-   typedef boost::system::error_condition error_type;
+int forker::fork (fork_handler *handler,
+	     const boost::filesystem::path &dir,
+	     const boost::filesystem::path &cmd,
+	     const std::vector <std::string> &args)
+{
+   handler->prepare_fork ();
 
-   inline calibrator (boost::asio::io_service &io_service)
-      : io_service_ (io_service), IF_ (0)
-   {
+   int p[2];
+   pipe (p);
+
+   pid_t pid = ::fork ();
+   if (pid == 0) {
+      handler->child_fork ();
+
+      while ((dup2(p[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
+      while ((dup2(p[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+      close(p[1]);
+      close(p[0]);
+
+      boost::filesystem::current_path (dir);
+
+      char **argv = new char *[args.size () + 1];
+      for (size_t i = 0; i < args.size (); i++) {
+	 argv[i] = new char [args[i].length () + 1];
+	 strcpy (argv[i], args[i].c_str ());
+      }
+      argv[args.size ()] = 0;
+
+      execvp(cmd.c_str (), argv);
+      exit (1);
    }
+   handler->parent_fork (pid);
+   close (p[1]);
 
-   error_type calibrate (const station &st, fork_handler *handler);
-
-   inline double get_IF () const {
-      return IF_;
-   }
-private:
-   error_type read_if (int fd);
-private:
-   boost::asio::io_service &io_service_;
-   double IF_;
-   logger lg_;
-};
-
+   return p[0];
 }
 
-#endif // GENESIS_CALIBRATOR_HPP
+}
