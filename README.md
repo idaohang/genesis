@@ -21,9 +21,15 @@ Firstly, do a typical cmake build:
 
 Start up Genesis with the `genesis` command. If you just built it, it will be in the `src` directory. Here's an example, illustrating the command line arguments available. They should be pretty self explanatory.
 
-    src/genesis --gnss_sdr /path/to/gnss-sdr --front_end_cal /path/to/front-end-cal --config_file /path/to/gnss-sdr.conf --cal_config_file /path/to/front-end-cal.conf
-    
+    src/genesis
+
+The following arguments (with defaults) are available:
+
+ - `--gnss_sdr` (/usr/local/bin/gnss-sdr)
+ - `--front_end_cal` (/usr/local/bin/front-end-cal)
+ - `--config_file` (/usr/local/share/gnss-sdr/conf/gnss-sdr.conf)
+ - `--cal_config_file` (/usr/local/share/gnss-sdr/conf/front-end-cal.conf)
+
 ## Connecting Stations
 
 Now that you have Genesis running, and you've built a couple of stations (your Raspberry Pis), you can connect them up. Simply turn the stations on; as long as you've configured the networking on them correctly, they should automatically be detected by Genesis, which will start reading from them.
-
