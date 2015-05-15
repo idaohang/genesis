@@ -47,6 +47,7 @@ target_link_libraries (
   genesis
   ${Boost_LIBRARIES}
   ${GFlags_LIBS}
+  ${CMAKE_THREAD_LIBS_INIT}
 )
 
 source_group (Headers FILES ${GENESIS_HEADERS})

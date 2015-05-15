@@ -16,9 +16,10 @@
 # along with Genesis. If not, see <http://www.gnu.org/licenses/>.
 #
 cmake_minimum_required (VERSION 2.8)
-project (genesis CXX)
+project (genesis C CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
+
 
 option(MAKE_GENESIS "Make the genesis application" ON)
 option(MAKE_GENESIS_PING "Make the genesis_ping application" ON)
@@ -37,6 +38,9 @@ if (MAKE_GENESIS)
   set(BOOST_COMPONENTS ${BOOST_COMPONENTS} thread date_time log filesystem serialization regex)
 endif (MAKE_GENESIS)
 find_package(Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
+
+# Find threads
+find_package (Threads)
 
 # Compiler flags
 set (MY_CXX_FLAGS_DEBUG "-DGENESIS_DEBUG")

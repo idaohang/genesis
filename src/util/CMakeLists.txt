@@ -28,7 +28,8 @@ include_directories (
 add_executable (genesis_ping ${GENESIS_PING_SOURCES})
 target_link_libraries (
   genesis_ping
-  ${Boost_LIBRARIES})
+  ${Boost_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT})
 
 install (TARGETS genesis_ping RUNTIME DESTINATION bin)
 endif (MAKE_GENESIS_PING)
