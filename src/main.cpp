@@ -36,16 +36,16 @@
 namespace fs = boost::filesystem;
 
 DEFINE_string (config_file,
-               "./gnss-sdr.conf",
+               "/usr/local/share/gnss-sdr/conf/gnss-sdr.conf",
                "The GNSS-SDR configuration file to use.");
 DEFINE_string (cal_config_file,
-               "./front-end-cal.conf",
+               "/usr/local/share/gnss-sdr/conf/front-end-cal.conf",
                "The front-end-cal configuration file to use.");
 DEFINE_string (gnss_sdr,
-               "/usr/bin/gnss-sdr",
+               "/usr/local/bin/gnss-sdr",
                "The gnss-sdr executable");
 DEFINE_string (front_end_cal,
-               "/usr/bin/front-end-cal",
+               "/usr/local/bin/front-end-cal",
                "The front-end-cal executable");
 
 fs::path GNSS_SDR_CONFIG_FILE,
