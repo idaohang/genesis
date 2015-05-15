@@ -26,7 +26,8 @@ set (GENESIS_SOURCES
   service.cpp
   session.cpp
   calibrator.cpp
-  fork.cpp)
+  fork.cpp
+  station_config.cpp)
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}

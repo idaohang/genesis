@@ -28,14 +28,13 @@
  */
 #include "error.hpp"
 #include "calibrator.hpp"
+#include "station_config.hpp"
 #include <unistd.h>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <sstream>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
 #include <fstream>
 #include <boost/bind.hpp>
 
@@ -44,62 +43,32 @@ namespace fs = boost::filesystem;
 extern fs::path FRONT_END_CAL_EXECUTABLE;
 extern fs::path FRONT_END_CAL_CONFIG_FILE;
 
-static const fs::path SAVED_BIAS_FILE = "saved_bias";
+static const fs::path STATION_CONFIG_FILE = "station_config";
 
 namespace genesis {
 
 namespace detail {
 
-// Class reads and writes the IF bias to a Boost Serialisation archive
-class bias_serializer {
-   friend class boost::serialization::access;
-
-   double bias_;
-
-   template<class Archive>
-   void serialize(Archive & ar, const unsigned int)
-   {
-      ar  & bias_;
-   }
-public:
-   explicit bias_serializer (double bias = 0) : bias_ (bias)
-   {
-   }
-
-   inline double bias () const { return bias_; }
-};
-
 // Load the bias from a saved file
 static bool load_bias (const fs::path &subdir, double &bias) {
    fs::path file = subdir;
-   file /= SAVED_BIAS_FILE;
+   file /= STATION_CONFIG_FILE;
 
-   std::ifstream ifs (file.c_str ());
-   if (!ifs) {
-      return false;
+   station_config cfg;
+   bool result = load_station_config (file, cfg);
+   if (result) {
+       bias = cfg.if_bias ();
    }
-
-   bias_serializer bs;
-   boost::archive::text_iarchive ia (ifs);
-   ia >> bs;
-   bias = bs.bias();
-   return true;
+   return result;
 }
 
 // Save the bias to a file
 static bool save_bias (const fs::path &subdir, double bias) {
    fs::path file = subdir;
-   file /= SAVED_BIAS_FILE;
+   file /= STATION_CONFIG_FILE;
 
-   std::ofstream ofs (file.c_str ());
-   if (!ofs) {
-      return false;
-   }
-
-   bias_serializer bs (bias);
-   boost::archive::text_oarchive oa (ofs);
-   oa << bs;
-   return true;
+   station_config cfg (bias);
+   return save_station_config (file, cfg);
 }
 
 // Write the INI file to the local directory
