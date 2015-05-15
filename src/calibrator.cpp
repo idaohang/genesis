@@ -50,7 +50,7 @@ namespace genesis {
 namespace detail {
 
 class bias_serializer {
-    friend class boost::serialization::access;
+   friend class boost::serialization::access;
 
    double bias_;
 
@@ -97,46 +97,6 @@ static bool save_bias (const fs::path &subdir, double bias) {
    return true;
 }
 
-static boost::regex expression (
-   "IF bias present in baseband\\=([0-9]+\\.[0-9]*) \\[Hz\\]");
-
-static calibrator::error_type read_if (int fd, logger &lg, double &bias) {
-   bias = 0.0;
-   char buffer[1024];
-   std::ostringstream ss;
-
-   while (1) {
-      ssize_t count = read(fd, buffer, sizeof(buffer));
-      if (count == -1) {
-         if (errno == EINTR) {
-            continue;
-         } else {
-            BOOST_LOG_SEV (lg, error) << "Error reading from front-end-cal";
-         }
-      } else if (count == 0) {
-         break;
-      } else {
-         ss << std::string (buffer, count);
-      }
-   }
-   close(fd);
-
-   std::string out = ss.str ();
-   std::string::const_iterator start = out.begin (), end = out.end ();
-   boost::match_results <std::string::const_iterator> what;
-   boost::match_flag_type flags = boost::match_default;
-   if (boost::regex_search (start, end, what, expression, flags)) {
-      BOOST_LOG_SEV (lg, debug)
-         << "Found IF bias of " << what[1];
-      bias = boost::lexical_cast <double> (what[1]);
-      return calibrator::error_type ();
-   }
-   BOOST_LOG_SEV (lg, error)
-      << "No IF bias found";
-
-   return make_error_condition (if_bias_not_found);
-}
-
 static calibrator::error_type write_config (
    const station &st,
    const fs::path &path)
@@ -156,6 +116,47 @@ static calibrator::error_type write_config (
    return calibrator::error_type ();
 }
 
+}
+
+calibrator::error_type calibrator::read_if (int fd) {
+   static const boost::regex expression (
+      "IF bias present in baseband\\=([0-9]+\\.[0-9]*) \\[Hz\\]");
+
+   boost::system::error_code ec;
+   IF_ = 0;
+
+   // Use asio stream
+   boost::asio::posix::stream_descriptor stream(io_service_, ::dup (fd));
+   boost::asio::streambuf buffer (1024);
+
+   while (!io_service_.stopped ()) {
+      // Read a line
+      size_t len = boost::asio::read_until (stream, buffer, '\n', ec);
+      if (ec && ec != boost::asio::error::not_found) {
+            BOOST_LOG_SEV (lg_, error) << "Error reading from front-end-cal: "
+				      << ec.message ();
+	 return to_error_condition (ec);
+      }
+
+      char data[1024];
+      buffer.sgetn (data, len);
+
+      const char *begin = &data[0];
+      const char *end = &data[len];
+
+      // Search for the output which states the IF bias
+      boost::match_results <const char *> what;
+      boost::match_flag_type flags = boost::match_default;
+      if (boost::regex_search (begin, end, what, expression, flags)) {
+	 BOOST_LOG_SEV (lg_, debug)
+	    << "Found IF bias of " << what[1];
+	 IF_ = boost::lexical_cast <double> (what[1]);
+	 return error_type ();
+      }
+   }
+   BOOST_LOG_SEV (lg_, error)
+      << "No IF bias found";
+   return make_error_condition (if_bias_not_found);
 }
 
 calibrator::error_type calibrator::calibrate_impl (
@@ -226,7 +227,7 @@ calibrator::error_type calibrator::calibrate_impl (
    parent_fork (pid);
    close (p[1]);
 
-   et = detail::read_if (p[0], lg_, IF_);
+   et = read_if (p[0]);
    if (!et) {
       BOOST_LOG_SEV (lg_, debug) << "Saving IF bias";
       if (!detail::save_bias (path, IF_)) {

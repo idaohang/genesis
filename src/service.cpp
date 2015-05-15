@@ -275,7 +275,7 @@ void service::parent_fork (int pid) {
 
 void service::start_station (const station &st) {
    // Calibrate
-   calibrator cal;
+   calibrator cal (io_service_);
    error_type ec = cal.calibrate (
       st,
       boost::bind (&service::prepare_fork, this),

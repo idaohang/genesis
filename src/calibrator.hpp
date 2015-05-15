@@ -32,6 +32,7 @@
 #include "error.hpp"
 #include <boost/move/core.hpp>
 #include <boost/function.hpp>
+#include <boost/asio.hpp>
 #include "station.hpp"
 #include "log.hpp"
 
@@ -46,8 +47,8 @@ class calibrator {
 public:
    typedef boost::system::error_condition error_type;
 
-   inline calibrator ()
-      : IF_ (0)
+   inline calibrator (boost::asio::io_service &io_service)
+      : io_service_ (io_service), IF_ (0)
    {
    }
 
@@ -65,12 +66,15 @@ public:
       return IF_;
    }
 private:
+   error_type read_if (int fd);
+
    error_type calibrate_impl (
       const station &st,
       boost::function <void ()> prepare_fork,
       boost::function <void ()> child_fork,
       boost::function <void (int)> parent_fork);
 private:
+   boost::asio::io_service &io_service_;
    double IF_;
    logger lg_;
 };
