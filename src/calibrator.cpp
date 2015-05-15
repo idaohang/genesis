@@ -49,6 +49,7 @@ namespace genesis {
 
 namespace detail {
 
+// Class reads and writes the IF bias to a Boost Serialisation archive
 class bias_serializer {
    friend class boost::serialization::access;
 
@@ -67,6 +68,7 @@ public:
    inline double bias () const { return bias_; }
 };
 
+// Load the bias from a saved file
 static bool load_bias (const fs::path &subdir, double &bias) {
    fs::path file = subdir;
    file /= SAVED_BIAS_FILE;
@@ -82,6 +84,8 @@ static bool load_bias (const fs::path &subdir, double &bias) {
    bias = bs.bias();
    return true;
 }
+
+// Save the bias to a file
 static bool save_bias (const fs::path &subdir, double bias) {
    fs::path file = subdir;
    file /= SAVED_BIAS_FILE;
@@ -97,6 +101,7 @@ static bool save_bias (const fs::path &subdir, double bias) {
    return true;
 }
 
+// Write the INI file to the local directory
 static calibrator::error_type write_config (
    const station &st,
    const fs::path &path)
@@ -111,12 +116,14 @@ static calibrator::error_type write_config (
    }
 
    ofs << ifs.rdbuf ();
-   ofs << "\nSignalSource.address=" << st.get_address () << std::endl;
+
+   // Writing these at the end will override previous definitions
+   ofs << std::endl << "SignalSource.address=" << st.get_address () << std::endl;
    ofs << "SignalSource.port=" << st.get_port () << std::endl;
    return calibrator::error_type ();
 }
 
-}
+} // detail
 
 calibrator::error_type calibrator::read_if (int fd) {
    static const boost::regex expression (
@@ -227,6 +234,7 @@ calibrator::error_type calibrator::calibrate_impl (
    parent_fork (pid);
    close (p[1]);
 
+   // In the parent - read the output from front-end-cal
    et = read_if (p[0]);
    if (!et) {
       BOOST_LOG_SEV (lg_, debug) << "Saving IF bias";
