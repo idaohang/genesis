@@ -20,15 +20,23 @@ project (genesis CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
-find_package(GFlags)
+option(MAKE_GENESIS "Make the genesis application" ON)
+option(MAKE_GENESIS_PING "Make the genesis_ping application" ON)
 
-if (NOT GFlags_FOUND)
-  message (FATAL_ERROR "GFlags is required")
-endif (NOT GFlags_FOUND)
+if (MAKE_GENESIS)
+  find_package(GFlags)
+
+  if (NOT GFlags_FOUND)
+    message (FATAL_ERROR "GFlags is required")
+  endif (NOT GFlags_FOUND)
+endif (MAKE_GENESIS)
 
 # Find Boost
-find_package(Boost COMPONENTS
-  system thread date_time log filesystem serialization regex REQUIRED)
+set (BOOST_COMPONENTS system)
+if (MAKE_GENESIS)
+  set(BOOST_COMPONENTS ${BOOST_COMPONENTS} thread date_time log filesystem serialization regex)
+endif (MAKE_GENESIS)
+find_package(Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 
 # Compiler flags
 set (MY_CXX_FLAGS_DEBUG "-DGENESIS_DEBUG")

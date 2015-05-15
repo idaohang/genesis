@@ -17,6 +17,7 @@
 #
 add_subdirectory (util)
 
+if (MAKE_GENESIS)
 set (GENESIS_SOURCES
   main.cpp
   error.cpp
@@ -49,3 +50,6 @@ target_link_libraries (
 )
 
 source_group (Headers FILES ${GENESIS_HEADERS})
+
+install (TARGETS genesis RUNTIME DESTINATION bin)
+endif (MAKE_GENESIS)

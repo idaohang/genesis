@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Genesis. If not, see <http://www.gnu.org/licenses/>.
 #
-
+if (MAKE_GENESIS_PING)
 set (GENESIS_PING_SOURCES
   genesis_ping.cpp)
 
@@ -29,3 +29,6 @@ add_executable (genesis_ping ${GENESIS_PING_SOURCES})
 target_link_libraries (
   genesis_ping
   ${Boost_LIBRARIES})
+
+install (TARGETS genesis_ping RUNTIME DESTINATION bin)
+endif (MAKE_GENESIS_PING)
