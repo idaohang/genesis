@@ -66,7 +66,7 @@ int main (int argc, char *argv[]) {
   genesis::init_logging ();
   genesis::logger lg;
 
-  GNSS_SDR_CONFIG_FILE = FLAGS_config_file;
+  GNSS_SDR_CONFIG_FILE = fs::canonical (FLAGS_config_file);
   BOOST_LOG_SEV (lg, genesis::debug)
     << "Using "
     << GNSS_SDR_CONFIG_FILE
@@ -78,7 +78,7 @@ int main (int argc, char *argv[]) {
   }
 
 
-  FRONT_END_CAL_CONFIG_FILE =FLAGS_cal_config_file;
+  FRONT_END_CAL_CONFIG_FILE = fs::canonical (FLAGS_cal_config_file);
   BOOST_LOG_SEV (lg, genesis::debug)
     << "Using "
     << FRONT_END_CAL_CONFIG_FILE
@@ -89,7 +89,7 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  GNSS_SDR_EXECUTABLE = FLAGS_gnss_sdr;
+  GNSS_SDR_EXECUTABLE = fs::canonical (FLAGS_gnss_sdr);
   BOOST_LOG_SEV (lg, genesis::debug)
     << "Using "
     << GNSS_SDR_EXECUTABLE
@@ -100,7 +100,7 @@ int main (int argc, char *argv[]) {
     return 1;
   }
 
-  FRONT_END_CAL_EXECUTABLE = FLAGS_front_end_cal;
+  FRONT_END_CAL_EXECUTABLE = fs::canonical (FLAGS_front_end_cal);
   BOOST_LOG_SEV (lg, genesis::debug)
     << "Using "
     << FRONT_END_CAL_EXECUTABLE
