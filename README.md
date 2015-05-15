@@ -3,7 +3,7 @@ A Multi-station GNSS Receiver
 
 ## What is Genesis?
 
-Genesis is a simple coordinating program for running a multi-station GNSS receiver. It makes use of GNSS-SDR as a software-define GNSS receiver, and RTKLIB for integer ambiguity resolution.
+Genesis is a simple coordinating program for running a multi-station GNSS receiver. It makes use of GNSS-SDR as a software-defined GNSS receiver, and RTKLIB for integer ambiguity resolution.
 
 ## How do I use it?
 
