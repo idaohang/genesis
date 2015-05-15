@@ -133,12 +133,15 @@ calibrator::error_type calibrator::read_if (int fd) {
    IF_ = 0;
 
    // Use asio stream
-   boost::asio::posix::stream_descriptor stream(io_service_, ::dup (fd));
+   boost::asio::posix::stream_descriptor stream(io_service_,  (fd));
    boost::asio::streambuf buffer (1024);
 
    while (!io_service_.stopped ()) {
       // Read a line
       size_t len = boost::asio::read_until (stream, buffer, '\n', ec);
+      if (!len) {
+	 break;
+      }
       if (ec && ec != boost::asio::error::not_found) {
             BOOST_LOG_SEV (lg_, error) << "Error reading from front-end-cal: "
 				      << ec.message ();
@@ -225,8 +228,7 @@ calibrator::error_type calibrator::calibrate_impl (
             "front-end-cal",
             "--config_file",
             "front-end-cal.conf",
-            "--log_dir",
-            "./",
+            "-log_dir=./",
             (char*)0);
       perror ("execl");
       exit (1);
