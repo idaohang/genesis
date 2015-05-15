@@ -341,6 +341,15 @@ void service::on_stdin (const boost::system::error_code &ec,
       BOOST_LOG (lg_) << "Received shutdown signal.";
       shutdown ();
    }
+   else {
+      // handle input
+      boost::asio::async_read_until (
+	 stdin_, stdin_buf_, '\n',
+            boost::bind (&service::on_stdin,
+                         this,
+                         boost::asio::placeholders::error,
+                         boost::asio::placeholders::bytes_transferred));
+   }
 }
 
 void service::shutdown () {
