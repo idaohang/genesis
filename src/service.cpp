@@ -237,6 +237,8 @@ void service::handle_packet () {
       << " port=" << st.get_port ()
       << " type=" << st.get_type ();
 
+   // Adding the station to the controller
+   // prevents duplicates from being initiated.
    error_type e = controller_->add_station (st);
    if (e) {
       BOOST_LOG_SEV (lg_, error)
@@ -286,6 +288,11 @@ void service::start_station (const station &st) {
    }
    else {
       // TODO: Run GNSS-SDR
+   }
+
+   if (!io_service_.stopped ()) {
+       // Done - remove station
+       controller_->remove_station (st);
    }
 }
 

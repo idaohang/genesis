@@ -48,10 +48,7 @@ class calibrator : private forker {
 public:
    typedef boost::system::error_condition error_type;
 
-   inline calibrator (boost::asio::io_service &io_service)
-      : io_service_ (io_service), IF_ (0)
-   {
-   }
+   calibrator (boost::asio::io_service &io_service);
 
    error_type calibrate (const station &st, fork_handler *handler);
 
@@ -60,9 +57,14 @@ public:
    }
 private:
    error_type read_if (int fd);
+   void handle_read (boost::system::error_code ec, size_t len);
 private:
    boost::asio::io_service &io_service_;
+   boost::asio::deadline_timer timer_;
+   boost::asio::posix::stream_descriptor stream_;
+   boost::asio::streambuf buffer_;
    double IF_;
+   error_type read_error_;
    logger lg_;
 };
 

@@ -37,6 +37,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <fstream>
+#include <boost/bind.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -125,6 +126,19 @@ static calibrator::error_type write_config (
 
 } // detail
 
+enum {
+    BUFFER_SIZE
+};
+
+calibrator::calibrator (boost::asio::io_service &io_service)
+       : io_service_ (io_service),
+         timer_ (io_service),
+         stream_ (io_service),
+         buffer_ (BUFFER_SIZE),
+         IF_ (0)
+   {
+   }
+
 calibrator::error_type calibrator::read_if (int fd) {
    static const boost::regex expression (
       "IF bias present in baseband\\=([0-9]+\\.[0-9]*) \\[Hz\\]");
@@ -133,40 +147,67 @@ calibrator::error_type calibrator::read_if (int fd) {
    IF_ = 0;
 
    // Use asio stream
-   boost::asio::posix::stream_descriptor stream(io_service_,  (fd));
-   boost::asio::streambuf buffer (1024);
+   read_error_ = make_error_condition (if_bias_not_found);
+   stream_.assign (fd);
 
-   while (!io_service_.stopped ()) {
-      // Read a line
-      size_t len = boost::asio::read_until (stream, buffer, '\n', ec);
-      if (!len) {
-	 break;
-      }
-      if (ec && ec != boost::asio::error::not_found) {
-            BOOST_LOG_SEV (lg_, error) << "Error reading from front-end-cal: "
-				      << ec.message ();
-	 return to_error_condition (ec);
-      }
+   // 2 minutes to run
+   timer_.expires_from_now (boost::posix_time::minutes (2));
 
-      char data[1024];
-      buffer.sgetn (data, len);
+   boost::asio::async_read_until (
+       stream_, buffer_, '\n',
+       boost::bind (&calibrator::handle_read,
+                    this,
+                    boost::asio::placeholders::error,
+                    boost::asio::placeholders::bytes_transferred));
 
-      const char *begin = &data[0];
-      const char *end = &data[len];
+   boost::system::error_code timer_error;
+   timer_.wait (timer_error);
+   stream_.cancel ();
+   stream_.close ();
+   return read_error_;
+}
 
-      // Search for the output which states the IF bias
-      boost::match_results <const char *> what;
-      boost::match_flag_type flags = boost::match_default;
-      if (boost::regex_search (begin, end, what, expression, flags)) {
-	 BOOST_LOG_SEV (lg_, debug)
-	    << "Found IF bias of " << what[1];
-	 IF_ = boost::lexical_cast <double> (what[1]);
-	 return error_type ();
-      }
+void calibrator::handle_read (boost::system::error_code ec, size_t len) {
+   static const boost::regex expression (
+      "IF bias present in baseband\\=([0-9]+\\.[0-9]*) \\[Hz\\]");
+   if (len == 0) {
+       return;
    }
-   BOOST_LOG_SEV (lg_, error)
-      << "No IF bias found";
-   return make_error_condition (if_bias_not_found);
+
+    if (ec && ec != boost::asio::error::not_found) {
+        BOOST_LOG_SEV (lg_, error) << "Error reading from front-end-cal: "
+                                   << ec.message ();
+        read_error_ = to_error_condition (ec);
+        timer_.cancel ();
+        return;
+    }
+
+    char data[BUFFER_SIZE];
+    buffer_.sgetn (data, len);
+
+    const char *begin = &data[0];
+    const char *end = &data[len];
+
+    // Search for the output which states the IF bias
+    boost::match_results <const char *> what;
+    boost::match_flag_type flags = boost::match_default;
+    if (boost::regex_search (begin, end, what, expression, flags)) {
+        BOOST_LOG_SEV (lg_, debug)
+           << "Found IF bias of " << what[1];
+        IF_ = boost::lexical_cast <double> (what[1]);
+        read_error_ = error_type ();
+        timer_.cancel ();
+    }
+    else {
+        // Keep reading
+        boost::asio::async_read_until (
+            stream_, buffer_, '\n',
+            boost::bind (&calibrator::handle_read,
+                         this,
+                         boost::asio::placeholders::error,
+                         boost::asio::placeholders::bytes_transferred));
+    }
+
 }
 
 calibrator::error_type calibrator::calibrate (const station &st,

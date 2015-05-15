@@ -47,7 +47,9 @@ int forker::fork (fork_handler *handler,
    if (pid == 0) {
       handler->child_fork ();
 
+#ifndef GENESIS_DEBUG
       while ((dup2(p[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
+#endif
       while ((dup2(p[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
       close(p[1]);
       close(p[0]);

@@ -73,7 +73,7 @@ void init_logging () {
     boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend> >
        sink = add_console_log();
 #ifndef GENESIS_DEBUG
-    sink->set_filter(severity >= debug);
+    sink->set_filter(severity > debug);
 #endif
 
     sink->set_formatter (fmt);
