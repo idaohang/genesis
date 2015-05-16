@@ -44,6 +44,14 @@
 #include <set>
 #include <string>
 
+#ifndef BOOST_ASIO_HAS_LOCAL_SOCKETS
+#error Local sockets are required
+#endif
+
+#ifndef BOOST_ASIO_HAS_POSIX_STREAM_DESCRIPTOR
+#error Posix stream descriptors are required
+#endif
+
 namespace genesis {
 
 /*!
