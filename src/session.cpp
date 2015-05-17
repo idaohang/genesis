@@ -66,6 +66,10 @@ session::session(boost::asio::io_service& service,
 {
 }
 
+session::~session () {
+    impl_->controller_->remove_station (impl_->station_);
+}
+
 boost::asio::local::stream_protocol::socket &session::socket () {
     return impl_->socket_;
 }

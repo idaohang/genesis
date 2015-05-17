@@ -1,6 +1,6 @@
 /*!
- * \file calibrator.hpp
- * \brief Interface for a front end calibration service.
+ * \file gnss_sdr.hpp
+ * \brief Interface for running GNSS-SDR.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -27,12 +27,11 @@
  * -------------------------------------------------------------------------
  */
 #pragma once
-#ifndef GENESIS_CALIBRATOR_HPP
-#define GENESIS_CALIBRATOR_HPP
+#ifndef GENESIS_GNSS_SDR_HPP
+#define GENESIS_GNSS_SDR_HPP
 
 #include "error.hpp"
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace genesis {
 
@@ -40,25 +39,18 @@ class fork_handler;
 class station;
 
 /*!
- * \brief This class attempts to determine the IF of the
- * front end.
+ * \brief This class sets up the configuration and
+ * launches gnss-sdr for a given remote station.
  */
-class calibrator : boost::noncopyable {
+class gnss_sdr : boost::noncopyable {
 public:
    typedef boost::system::error_condition error_type;
 
-   calibrator ();
-
-   error_type calibrate (const station &st, fork_handler *handler);
-
-   double get_IF () const;
-private:
-   error_type read_if (int fd);
-private:
-   struct impl;
-   boost::shared_ptr <impl> impl_;
+   error_type run (const station &st,
+                   fork_handler *handler,
+                   double bias = 0);
 };
 
 }
 
-#endif // GENESIS_CALIBRATOR_HPP
+#endif // GENESIS_GNSS_SDR_HPP

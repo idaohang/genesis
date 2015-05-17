@@ -35,6 +35,7 @@
 #include <sys/wait.h>
 #include "session.hpp"
 #include "calibrator.hpp"
+#include "gnss_sdr.hpp"
 #include "packet.hpp"
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
@@ -245,8 +246,10 @@ void service::handle_packet () {
    // prevents duplicates from being initiated.
    error_type e = controller_->add_station (st);
    if (e) {
-      BOOST_LOG_SEV (lg_, error)
-         << "Error adding new station: " << e.message();
+       if (e.value () != station_exists) {
+           BOOST_LOG_SEV (lg_, error)
+              << "Error adding new station: " << e.message();
+       }
    }
    else {
       // New thread to calibrate and run
@@ -281,22 +284,40 @@ void service::parent_fork (int pid) {
 
 void service::start_station (const station &st) {
    // Calibrate
-   calibrator cal (io_service_);
-   error_type ec = cal.calibrate (st, this);
+   calibrator cal;
+   error_type et = cal.calibrate (st, this);
 
-   if (ec) {
+   if (et) {
       BOOST_LOG_SEV (lg_, error) << "Failed to calibrate station "
                                  << st.get_address ()
                                  << ": "
-                                 << ec.message ();
+                                 << et.message ();
+      controller_->remove_station (st);
    }
    else {
-      // TODO: Run GNSS-SDR
-   }
+       // Run GNSS-SDR
+       gnss_sdr runner;
+       et = runner.run (st, this, cal.get_IF ());
+       if (et) {
+           BOOST_LOG_SEV (lg_, error) << "Failed to start gnss-sdr: "
+                                      << et.message ();
+           controller_->remove_station (st);
+       }
+       else {
+           session_ptr sesh (new session (io_service_,
+                                          st,
+                                          controller_));
 
-   if (!io_service_.stopped ()) {
-       // Done - remove station
-       controller_->remove_station (st);
+           boost::system::error_code ec;
+           acceptor_.accept (sesh->socket (), ec);
+           if (ec) {
+               BOOST_LOG_SEV (lg_, error) << "No socket accepted for station: "
+                                          << ec.message ();
+           }
+           else {
+               sesh->start ();
+           }
+       }
    }
 }
 

@@ -51,6 +51,8 @@ public:
            const station &st,
            controller_ptr controller);
 
+   ~session ();
+
    boost::asio::local::stream_protocol::socket &socket ();
 
    void start();

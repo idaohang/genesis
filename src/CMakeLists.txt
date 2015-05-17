@@ -28,7 +28,8 @@ set (GENESIS_SOURCES
   session.cpp
   calibrator.cpp
   fork.cpp
-  station_config.cpp)
+  station_config.cpp
+  gnss_sdr.cpp)
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}

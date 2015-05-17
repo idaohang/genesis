@@ -35,42 +35,43 @@
 namespace genesis {
 
 int fork (fork_handler *handler,
-	     const boost::filesystem::path &dir,
-	     const boost::filesystem::path &cmd,
-	     const std::vector <std::string> &args)
+          const boost::filesystem::path &dir,
+          const boost::filesystem::path &cmd,
+          const std::vector <std::string> &args)
 {
-   handler->prepare_fork ();
+    handler->prepare_fork ();
 
-   int p[2];
-   pipe (p);
+    int p[2];
+    pipe (p);
 
-   pid_t pid = ::fork ();
-   if (pid == 0) {
-      handler->child_fork ();
+    pid_t pid = ::fork ();
+    if (pid == 0) {
+        close(p[0]);
 
+        while ((dup2(p[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
 #ifndef GENESIS_DEBUG
-      while ((dup2(p[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
+        while ((dup2(p[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
 #endif
-      while ((dup2(p[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
-      close(p[1]);
-      close(p[0]);
+        close(p[1]);
 
-      boost::filesystem::current_path (dir);
+        handler->child_fork ();
 
-      char **argv = new char *[args.size () + 1];
-      for (size_t i = 0; i < args.size (); i++) {
-	 argv[i] = new char [args[i].length () + 1];
-	 strcpy (argv[i], args[i].c_str ());
-      }
-      argv[args.size ()] = 0;
+        boost::filesystem::current_path (dir);
 
-      execvp(cmd.c_str (), argv);
-      exit (1);
-   }
-   handler->parent_fork (pid);
-   close (p[1]);
+        char **argv = new char *[args.size () + 1];
+        for (size_t i = 0; i < args.size (); i++) {
+            argv[i] = new char [args[i].length () + 1];
+            strcpy (argv[i], args[i].c_str ());
+        }
+        argv[args.size ()] = 0;
 
-   return p[0];
+        execvp(cmd.c_str (), argv);
+        exit (1);
+    }
+    handler->parent_fork (pid);
+    close (p[1]);
+
+    return p[0];
 }
 
 }

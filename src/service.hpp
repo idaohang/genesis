@@ -53,6 +53,7 @@
 namespace genesis {
 
 class station;
+class session;
 
 /*!
  * Class for operating the IO of Genesis.
@@ -68,6 +69,8 @@ public:
    error_type run (const std::string &socket_file,
                    const std::string &multicast_address);
 private:
+   typedef boost::shared_ptr <session> session_ptr;
+
    error_type setup_acceptor (const std::string &socket_file);
    error_type setup_listener (const std::string &multicast_address);
 
