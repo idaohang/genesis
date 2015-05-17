@@ -44,7 +44,7 @@ using namespace boost::asio::ip;
 int main (int argc, char *argv[]) {
     try {
         if (argc < 2 || argc > 3) {
-            std::cerr << "Usage: ping <multicast_address> [r|b]" << std::endl
+            std::cerr << "Usage: ping <address> [r|b]" << std::endl
                       << "r is rover (default) and b is base" << std::endl;
             return 1;
         }
