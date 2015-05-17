@@ -40,8 +40,8 @@ const boost::array <std::string, max_error> error_category::messages_ = {{
         "The specified rover already existims",
         "The specified station was not found",
         "Already running",
-	"The specified station is a base station",
-	"The specified station is a rover",
+        "The specified station is a base station",
+        "The specified station is a rover",
         "IF bias not found",
         "File not found"
     }};

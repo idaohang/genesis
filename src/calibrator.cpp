@@ -26,17 +26,21 @@
  *
  * -------------------------------------------------------------------------
  */
-#include "error.hpp"
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 #include "calibrator.hpp"
+#include "error.hpp"
+#include "fork.hpp"
+#include <fstream>
+#include "log.hpp"
+#include <sstream>
+#include "station.hpp"
 #include "station_config.hpp"
 #include <unistd.h>
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <sstream>
-#include <boost/regex.hpp>
-#include <boost/lexical_cast.hpp>
-#include <fstream>
-#include <boost/bind.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -99,12 +103,25 @@ enum {
     BUFFER_SIZE
 };
 
-calibrator::calibrator (boost::asio::io_service &io_service)
-       : io_service_ (io_service),
-         timer_ (io_service),
+struct calibrator::impl {
+   impl (boost::asio::io_service &io_service)
+       : timer_ (io_service),
          stream_ (io_service),
          buffer_ (BUFFER_SIZE),
          IF_ (0)
+      {
+      }
+
+   boost::asio::deadline_timer timer_;
+   boost::asio::posix::stream_descriptor stream_;
+   boost::asio::streambuf buffer_;
+   double IF_;
+   error_type read_error_;
+   logger lg_;
+};
+
+calibrator::calibrator (boost::asio::io_service &io_service)
+    : impl_ (new impl (io_service))
    {
    }
 
@@ -113,27 +130,27 @@ calibrator::error_type calibrator::read_if (int fd) {
       "IF bias present in baseband\\=([0-9]+\\.[0-9]*) \\[Hz\\]");
 
    boost::system::error_code ec;
-   IF_ = 0;
+   impl_->IF_ = 0;
 
    // Use asio stream
-   read_error_ = make_error_condition (if_bias_not_found);
-   stream_.assign (fd);
+   impl_->read_error_ = make_error_condition (if_bias_not_found);
+   impl_->stream_.assign (fd);
 
    // 2 minutes to run
-   timer_.expires_from_now (boost::posix_time::minutes (2));
+   impl_->timer_.expires_from_now (boost::posix_time::minutes (2));
 
    boost::asio::async_read_until (
-       stream_, buffer_, '\n',
+       impl_->stream_, impl_->buffer_, '\n',
        boost::bind (&calibrator::handle_read,
                     this,
                     boost::asio::placeholders::error,
                     boost::asio::placeholders::bytes_transferred));
 
    boost::system::error_code timer_error;
-   timer_.wait (timer_error);
-   stream_.cancel ();
-   stream_.close ();
-   return read_error_;
+   impl_->timer_.wait (timer_error);
+   impl_->stream_.cancel ();
+   impl_->stream_.close ();
+   return impl_->read_error_;
 }
 
 void calibrator::handle_read (boost::system::error_code ec, size_t len) {
@@ -144,15 +161,15 @@ void calibrator::handle_read (boost::system::error_code ec, size_t len) {
    }
 
     if (ec && ec != boost::asio::error::not_found) {
-        BOOST_LOG_SEV (lg_, error) << "Error reading from front-end-cal: "
+        BOOST_LOG_SEV (impl_->lg_, error) << "Error reading from front-end-cal: "
                                    << ec.message ();
-        read_error_ = to_error_condition (ec);
-        timer_.cancel ();
+        impl_->read_error_ = to_error_condition (ec);
+        impl_->timer_.cancel ();
         return;
     }
 
     char data[BUFFER_SIZE];
-    buffer_.sgetn (data, len);
+    impl_->buffer_.sgetn (data, len);
 
     const char *begin = &data[0];
     const char *end = &data[len];
@@ -161,16 +178,16 @@ void calibrator::handle_read (boost::system::error_code ec, size_t len) {
     boost::match_results <const char *> what;
     boost::match_flag_type flags = boost::match_default;
     if (boost::regex_search (begin, end, what, expression, flags)) {
-        BOOST_LOG_SEV (lg_, debug)
+        BOOST_LOG_SEV (impl_->lg_, debug)
            << "Found IF bias of " << what[1];
-        IF_ = boost::lexical_cast <double> (what[1]);
-        read_error_ = error_type ();
-        timer_.cancel ();
+        impl_->IF_ = boost::lexical_cast <double> (what[1]);
+        impl_->read_error_ = error_type ();
+        impl_->timer_.cancel ();
     }
     else {
         // Keep reading
         boost::asio::async_read_until (
-            stream_, buffer_, '\n',
+            impl_->stream_, impl_->buffer_, '\n',
             boost::bind (&calibrator::handle_read,
                          this,
                          boost::asio::placeholders::error,
@@ -192,8 +209,8 @@ calibrator::error_type calibrator::calibrate (const station &st,
    }
 
    // Look for existing calibration
-   if (detail::load_bias (path, IF_)) {
-      BOOST_LOG_SEV (lg_, debug)
+   if (detail::load_bias (path, impl_->IF_)) {
+      BOOST_LOG_SEV (impl_->lg_, debug)
          << "IF bias for "
          << st.get_address ()
          << " loaded from "
@@ -206,7 +223,7 @@ calibrator::error_type calibrator::calibrate (const station &st,
    config_file /= "front-end-cal.conf";
    error_type et = detail::write_config (st, config_file);
    if (et) {
-      BOOST_LOG_SEV (lg_, error) << "Failed to write config file "
+      BOOST_LOG_SEV (impl_->lg_, error) << "Failed to write config file "
                                  << "for station "
                                  << st.get_address ();
       return et;
@@ -218,20 +235,23 @@ calibrator::error_type calibrator::calibrate (const station &st,
    args.push_back ("--config_file");
    args.push_back ("front-end-cal.conf");
    args.push_back ("-log_dir=./");
-   int fd = forker::fork (handler,
-			  path,
-			  FRONT_END_CAL_EXECUTABLE,
-			  args);
+   int fd = genesis::fork (handler,
+                           path,
+                           FRONT_END_CAL_EXECUTABLE,
+                           args);
 
    // In the parent - read the output from front-end-cal
    et = read_if (fd);
    if (!et) {
-      BOOST_LOG_SEV (lg_, debug) << "Saving IF bias";
-      if (!detail::save_bias (path, IF_)) {
-         BOOST_LOG_SEV (lg_, warning) << "Saving IF bias failed.";
+      BOOST_LOG_SEV (impl_->lg_, debug) << "Saving IF bias";
+      if (!detail::save_bias (path, impl_->IF_)) {
+         BOOST_LOG_SEV (impl_->lg_, warning) << "Saving IF bias failed.";
       }
    }
    return et;
 }
 
+double calibrator::get_IF () const {
+    return impl_->IF_;
+}
 }

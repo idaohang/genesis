@@ -26,6 +26,7 @@
  *
  * -------------------------------------------------------------------------
  */
+#pragma once
 #ifndef GENESIS_LOG_HPP
 #define GENESIS_LOG_HPP
 

@@ -1,6 +1,6 @@
 /*!
- * \file session.hpp
- * \brief Interface for the server-side comms with child process.
+ * \file fork_handler.hpp
+ * \brief An interface for fork handling.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -27,43 +27,26 @@
  * -------------------------------------------------------------------------
  */
 #pragma once
-#ifndef GENESIS_SESSION_HPP
-#define GENESIS_SESSION_HPP
-
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/asio/local/stream_protocol.hpp>
+#ifndef GENESIS_FORK_HANDLER_HPP
+#define GENESIS_FORK_HANDLER_HPP
 
 namespace genesis {
 
-class client_controller;
-class station;
-class logger;
-
 /*!
- * \brief Class reads incoming data from child process.
+ * \brief Interface for a fork handler.
  */
-class session : public boost::enable_shared_from_this<session> {
+class fork_handler {
 public:
-   typedef boost::shared_ptr <client_controller> controller_ptr;
+   // Call this before forking
+   virtual void prepare_fork () = 0;
 
-   session(boost::asio::io_service& service,
-           const station &st,
-           controller_ptr controller);
+   // Call this after forking, in the child process
+   virtual void child_fork () = 0;
 
-   boost::asio::local::stream_protocol::socket &socket ();
-
-   void start();
-
-   void handle_read(const boost::system::error_code& error,
-                    size_t bytes_transferred);
-
-private:
-   void start_read ();
-private:
-   struct impl;
-   boost::shared_ptr <impl> impl_;
+   // Call this after forking, in the parent process
+   virtual void parent_fork (int pid) = 0;
 };
 
 }
-#endif //GENESIS_SESSION_HPP
+
+#endif // GENESIS_FORK_HANDLER_HPP

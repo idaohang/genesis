@@ -26,6 +26,7 @@
  *
  * -------------------------------------------------------------------------
  */
+#pragma once
 #ifndef GENESIS_FORK_HPP
 #define GENESIS_FORK_HPP
 
@@ -35,34 +36,14 @@
 
 namespace genesis {
 
-/*!
- * \brief Interface for a fork handler.
- */
-class fork_handler {
-public:
-   // Call this before forking
-   virtual void prepare_fork () = 0;
+class fork_handler;
 
-   // Call this after forking, in the child process
-   virtual void child_fork () = 0;
+// Returns a file handle for a combined stdout/stderr stream.
+int fork (fork_handler *handler,
+          const boost::filesystem::path &dir,
+          const boost::filesystem::path &cmd,
+          const std::vector <std::string> &args);
 
-   // Call this after forking, in the parent process
-   virtual void parent_fork (int pid) = 0;
-};
-
-/*!
- * \brief Class performs a fork/exec.
- */
-class forker {
-public:
-
-   // Returns a file handle for a combined stdout/stderr stream.
-   int fork (fork_handler *handler,
-	     const boost::filesystem::path &dir,
-	     const boost::filesystem::path &cmd,
-	     const std::vector <std::string> &args);
-
-};
 }
 
 #endif // GENESIS_FORK_HPP

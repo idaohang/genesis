@@ -27,13 +27,14 @@
  * -------------------------------------------------------------------------
  */
 #include "fork.hpp"
+#include "fork_handler.hpp"
 #include <sys/types.h>
 #include <unistd.h>
 #include <boost/filesystem.hpp>
 
 namespace genesis {
 
-int forker::fork (fork_handler *handler,
+int fork (fork_handler *handler,
 	     const boost::filesystem::path &dir,
 	     const boost::filesystem::path &cmd,
 	     const std::vector <std::string> &args)

@@ -26,7 +26,7 @@
  *
  * -------------------------------------------------------------------------
  */
-
+#pragma once
 #ifndef GENESIS_ERROR_HPP
 #define GENESIS_ERROR_HPP
 

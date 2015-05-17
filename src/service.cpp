@@ -35,6 +35,7 @@
 #include <sys/wait.h>
 #include "session.hpp"
 #include "calibrator.hpp"
+#include "packet.hpp"
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 

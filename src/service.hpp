@@ -26,7 +26,7 @@
  *
  * -------------------------------------------------------------------------
  */
-
+#pragma once
 #ifndef GENESIS_SERVICE_HPP
 #define GENESIS_SERVICE_HPP
 
@@ -35,12 +35,10 @@
 #include <boost/move/core.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
 #include "client_controller.hpp"
 #include "error.hpp"
-#include "fork.hpp"
+#include "fork_handler.hpp"
 #include "log.hpp"
-#include "packet.hpp"
 #include <set>
 #include <string>
 
@@ -53,6 +51,8 @@
 #endif
 
 namespace genesis {
+
+class station;
 
 /*!
  * Class for operating the IO of Genesis.
@@ -94,7 +94,7 @@ private:
    virtual void parent_fork (int pid);
 private:
    enum {
-       MAX_DATA_LENGTH = packet::FIXED_DATA_SIZE
+       MAX_DATA_LENGTH = 6
    };
    // IO service members
    boost::asio::io_service io_service_;
@@ -128,7 +128,7 @@ private:
    // to kill
    std::set <int> to_kill_;
    boost::mutex mutex_;
-   typedef boost::lock_guard <boost::mutex> scoped_lock;
+   typedef boost::mutex::scoped_lock scoped_lock;
 };
 
 }

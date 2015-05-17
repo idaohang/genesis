@@ -26,6 +26,7 @@
  *
  * -------------------------------------------------------------------------
  */
+#pragma once
 #ifndef GENESIS_STATION_CONFIG_HPP
 #define GENESIS_STATION_CONFIG_HPP
 

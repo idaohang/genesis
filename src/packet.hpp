@@ -35,6 +35,7 @@
 #include <boost/array.hpp>
 
 namespace genesis {
+
 /*!
  * \brief The information contained in a UDP packet received from a client.
  */

@@ -31,6 +31,10 @@
 #include "client_controller.hpp"
 #include "error.hpp"
 #include <boost/range.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
+#include <set>
+#include "station.hpp"
 
 namespace genesis {
 
@@ -69,9 +73,17 @@ private:
    const std::string &address_;
 };
 
-}
+} //namespace detail
+
+struct client_controller::impl {
+   station base_;
+   std::set<station> rovers_;
+   mutable boost::recursive_mutex mutex_;
+   typedef boost::lock_guard <boost::recursive_mutex> lock;
+};
 
 client_controller::client_controller()
+    : impl_ (new impl())
 {
 }
 
@@ -89,13 +101,13 @@ client_controller::error_type client_controller::add_station (
       return make_error_condition (invalid_station);
    }
 
-   scoped_lock lock (mutex_);
+   impl::lock lock (impl_->mutex_);
    if (st.get_type () == station::STATION_TYPE_ROVER) {
-      if (st.get_address () == base_.get_address ()) {
+      if (st.get_address () == impl_->base_.get_address ()) {
          // already the base station
          return make_error_condition (station_is_base);
       }
-      if (!rovers_.insert (st).second) {
+      if (!impl_->rovers_.insert (st).second) {
          // already inserted
          return make_error_condition (station_exists);
       }
@@ -104,12 +116,12 @@ client_controller::error_type client_controller::add_station (
       if (has_base ()) {
          return make_error_condition (base_already_set);
       }
-      if (rovers_.find (st) != boost::end (rovers_)) {
+      if (impl_->rovers_.find (st) != boost::end (impl_->rovers_)) {
          // already a rover
          return make_error_condition (station_is_rover);
       }
 
-      base_ = st;
+      impl_->base_ = st;
    }
 
    return error_type ();
@@ -117,12 +129,12 @@ client_controller::error_type client_controller::add_station (
 
 client_controller::error_type
 client_controller::remove_station (const station &st) {
-   scoped_lock lock (mutex_);
-   if (base_.get_address () == st.get_address ()) {
+   impl::lock lock (impl_->mutex_);
+   if (impl_->base_.get_address () == st.get_address ()) {
       return reset_base ();
    }
 
-   if (!rovers_.erase (st)) {
+   if (!impl_->rovers_.erase (st)) {
       // Not found
       return make_error_condition (station_not_found);
    }
@@ -130,13 +142,13 @@ client_controller::remove_station (const station &st) {
 }
 
 bool client_controller::has_base () const {
-   scoped_lock lock (mutex_);
-   return detail::validate_station (base_);
+   impl::lock lock (impl_->mutex_);
+   return detail::validate_station (impl_->base_);
 }
 
 client_controller::error_type client_controller::reset_base () {
-   scoped_lock lock (mutex_);
-   base_ = station ();
+   impl::lock lock (impl_->mutex_);
+   impl_->base_ = station ();
    return error_type ();
 }
 

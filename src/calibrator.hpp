@@ -26,24 +26,25 @@
  *
  * -------------------------------------------------------------------------
  */
+#pragma once
 #ifndef GENESIS_CALIBRATOR_HPP
 #define GENESIS_CALIBRATOR_HPP
 
 #include "error.hpp"
 #include <boost/move/core.hpp>
-#include <boost/function.hpp>
-#include <boost/asio.hpp>
-#include "station.hpp"
-#include "log.hpp"
-#include "fork.hpp"
+#include <boost/asio/io_service.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace genesis {
+
+class fork_handler;
+class station;
 
 /*!
  * \brief This class attempts to determine the IF of the
  * front end.
  */
-class calibrator : private forker {
+class calibrator {
    BOOST_MOVABLE_BUT_NOT_COPYABLE (calibrator)
 public:
    typedef boost::system::error_condition error_type;
@@ -52,20 +53,13 @@ public:
 
    error_type calibrate (const station &st, fork_handler *handler);
 
-   inline double get_IF () const {
-      return IF_;
-   }
+   double get_IF () const;
 private:
    error_type read_if (int fd);
    void handle_read (boost::system::error_code ec, size_t len);
 private:
-   boost::asio::io_service &io_service_;
-   boost::asio::deadline_timer timer_;
-   boost::asio::posix::stream_descriptor stream_;
-   boost::asio::streambuf buffer_;
-   double IF_;
-   error_type read_error_;
-   logger lg_;
+   struct impl;
+   boost::shared_ptr <impl> impl_;
 };
 
 }

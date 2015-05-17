@@ -27,20 +27,17 @@
  *
  * -------------------------------------------------------------------------
  */
-
+#pragma once
 #ifndef GENESIS_CLIENT_CONTROLLER_HPP
 #define GENESIS_CLIENT_CONTROLLER_HPP
 
-
-#include <boost/shared_ptr.hpp>
 #include <boost/move/core.hpp>
 #include <boost/system/error_code.hpp>
-#include <boost/thread/recursive_mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
-#include <set>
-#include "station.hpp"
+#include <boost/shared_ptr.hpp>
 
 namespace genesis {
+
+class station;
 
 /*!
  * \brief This class keeps track of which clients are connected
@@ -65,11 +62,8 @@ public:
    error_type reset_base ();
 
 private:
-
-   station base_;
-   std::set<station> rovers_;
-   mutable boost::recursive_mutex mutex_;
-   typedef boost::lock_guard<boost::recursive_mutex> scoped_lock;
+   struct impl;
+   boost::shared_ptr <impl> impl_;
 };
 
 }
