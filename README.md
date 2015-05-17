@@ -15,13 +15,17 @@ Finally, you can run Genesis.
 
 ## Running Genesis
 
-Firstly, do a typical cmake build:
+Firstly, do a typical cmake build and install inside the source directory:
 
-    mkdir build && cd build && cmake .. && make
+    mkdir build
+    cd build
+    cmake ..
+    make
+    sudo make install
 
-Start up Genesis with the `genesis` command. If you just built it, it will be in the `src` directory. Here's an example, illustrating the command line arguments available. They should be pretty self explanatory.
+Then just run Genesis:
 
-    src/genesis
+    genesis
 
 The following arguments are available:
 
