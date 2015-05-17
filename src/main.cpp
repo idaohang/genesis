@@ -47,11 +47,50 @@ DEFINE_string (gnss_sdr,
 DEFINE_string (front_end_cal,
                "/usr/local/bin/front-end-cal",
                "The front-end-cal executable");
+DEFINE_string (socket_file,
+               "/var/run/genesis.socket",
+               "The domain socket to open");
+DEFINE_string (listen_address,
+               "0.0.0.0",
+               "The address to listen to pings from (can be multicast).");
+
+#ifdef GENESIS_DEBUG
+#define VERY_VERBOSE true
+#else
+#define VERY_VERBOSE false
+#endif
+
+DEFINE_bool (verbose,
+             false,
+             "Verbose output");
+DEFINE_bool (very_verbose,
+             VERY_VERBOSE,
+             "Very verbose output");
 
 fs::path GNSS_SDR_CONFIG_FILE,
    FRONT_END_CAL_CONFIG_FILE,
    GNSS_SDR_EXECUTABLE,
    FRONT_END_CAL_EXECUTABLE;
+
+genesis::logger lg;
+
+static void check_path (fs::path &dest,
+                        const std::string &path,
+                        const std::string &desc)
+{
+    boost::system::error_code ec;
+    dest = fs::canonical (path, ec);
+    if (ec) {
+        BOOST_LOG_SEV (lg, genesis::critical)
+           << "Cannot open " << desc << " " << path
+           << ": " << ec.message ();
+        ::exit (1);
+    }
+    BOOST_LOG_SEV (lg, genesis::debug)
+       << "Using "
+       << dest
+       << " for " << desc;
+}
 
 int main (int argc, char *argv[]) {
   const std::string intro_help
@@ -64,58 +103,28 @@ int main (int argc, char *argv[]) {
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   genesis::init_logging ();
-  genesis::logger lg;
 
-  GNSS_SDR_CONFIG_FILE = fs::canonical (FLAGS_config_file);
-  BOOST_LOG_SEV (lg, genesis::debug)
-    << "Using "
-    << GNSS_SDR_CONFIG_FILE
-    << " for gnss-sdr config";
+  check_path (GNSS_SDR_CONFIG_FILE,
+              FLAGS_config_file,
+              "gnss-sdr config");
 
-  if (!fs::exists (GNSS_SDR_CONFIG_FILE)) {
-    BOOST_LOG_SEV (lg, genesis::critical) << "Config file not found";
-    return 1;
-  }
+  check_path (FRONT_END_CAL_CONFIG_FILE,
+              FLAGS_cal_config_file,
+              "front-end-cal config");
 
+  check_path (GNSS_SDR_EXECUTABLE,
+              FLAGS_gnss_sdr,
+              "gnss-sdr executable");
 
-  FRONT_END_CAL_CONFIG_FILE = fs::canonical (FLAGS_cal_config_file);
-  BOOST_LOG_SEV (lg, genesis::debug)
-    << "Using "
-    << FRONT_END_CAL_CONFIG_FILE
-    << " for front-end-cal config";
-
-  if (!fs::exists (FRONT_END_CAL_CONFIG_FILE)) {
-    BOOST_LOG_SEV (lg, genesis::critical) << "Cal config file not found";
-    return 1;
-  }
-
-  GNSS_SDR_EXECUTABLE = fs::canonical (FLAGS_gnss_sdr);
-  BOOST_LOG_SEV (lg, genesis::debug)
-    << "Using "
-    << GNSS_SDR_EXECUTABLE
-    << " for gnss-sdr executable";
-
-  if (!fs::exists (GNSS_SDR_EXECUTABLE)) {
-    BOOST_LOG_SEV (lg, genesis::critical) << "gnss-sdr not found";
-    return 1;
-  }
-
-  FRONT_END_CAL_EXECUTABLE = fs::canonical (FLAGS_front_end_cal);
-  BOOST_LOG_SEV (lg, genesis::debug)
-    << "Using "
-    << FRONT_END_CAL_EXECUTABLE
-    << " for front-end-cal executable";
-
-  if (!fs::exists (FRONT_END_CAL_EXECUTABLE)) {
-    BOOST_LOG_SEV (lg, genesis::critical) << "front-end-cal not found";
-    return 1;
-  }
+  check_path (FRONT_END_CAL_EXECUTABLE,
+              FLAGS_front_end_cal,
+              "front-end-cal executable");
 
   // Start the service
   genesis::service service;
 
-  boost::system::error_condition ec = service.run ("./genesis.socket",
-                                                   "239.255.255.1");
+  boost::system::error_condition ec = service.run (FLAGS_socket_file,
+                                                   FLAGS_listen_address);
   if (ec) {
     BOOST_LOG_SEV (lg, genesis::critical) << "Failed to run: " << ec.message();
   }

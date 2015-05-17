@@ -108,7 +108,7 @@ private:
 
    // Multicast members
    boost::array <char, MAX_DATA_LENGTH> data_;
-   boost::asio::ip::udp::socket mcast_socket_;
+   boost::asio::ip::udp::socket udp_socket_;
    boost::asio::ip::udp::endpoint sender_endpoint_;
 
    // stdio members

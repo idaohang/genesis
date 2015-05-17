@@ -34,59 +34,12 @@
 #include <iostream>
 
 enum {
-    GENESIS_PORT = 9255
+    GENESIS_PORT = 9255,
+    RTL_TCP_PORT = 1234,
+    DATA_SIZE = genesis::packet::FIXED_DATA_SIZE
 };
 
-struct sender {
-   sender (boost::asio::io_service &service,
-           const boost::asio::ip::address &address,
-           bool base)
-       : endpoint_ (address, GENESIS_PORT),
-         socket_ (service, endpoint_.protocol ())
-      {
-          ::memset (data_, 0, sizeof (data_));
-
-          unsigned short *port = reinterpret_cast <unsigned short *>(
-              &data_[0]);
-          *port = 1234;
-          *port = boost::asio::detail::socket_ops::host_to_network_short (*port);
-
-          unsigned *type = reinterpret_cast <unsigned *>(
-              &data_[genesis::packet::PORT_SIZE]);
-          *type = base ?
-             genesis::station::STATION_TYPE_BASE :
-             genesis::station::STATION_TYPE_ROVER;
-          *type = boost::asio::detail::socket_ops::host_to_network_long (*type);
-
-          std::cout << "Sending "
-                    << (base ? "base" : "rover")
-                    << " ping to Genesis"
-                    << std::endl;
-
-          socket_.async_send_to (
-              boost::asio::buffer (data_, DATA_SIZE), endpoint_,
-              boost::bind(&sender::handle_send_to, this,
-                          boost::asio::placeholders::error));
-      }
-
-private:
-   enum {
-       DATA_SIZE = genesis::packet::FIXED_DATA_SIZE
-   };
-
-   void handle_send_to (boost::system::error_code ec) {
-       if (ec) {
-           std::cerr << "Error in sending: " << ec << std::endl;
-       }
-       else {
-           std::cout << "Sent ping to Genesis" << std::endl;
-       }
-   }
-
-   boost::asio::ip::udp::endpoint endpoint_;
-   boost::asio::ip::udp::socket socket_;
-   char data_[DATA_SIZE];
-};
+using namespace boost::asio::ip;
 
 int main (int argc, char *argv[]) {
     try {
@@ -95,12 +48,36 @@ int main (int argc, char *argv[]) {
                       << "r is rover (default) and b is base" << std::endl;
             return 1;
         }
+        bool base = false;
+        if (argc == 3) {
+            std::string ("b") == argv[2];
+        }
 
         boost::asio::io_service service;
-        sender s (service,
-                  boost::asio::ip::address::from_string (argv[1]),
-                  argc == 3 && std::string (argv[2]) == "b");
-        service.run ();
+        address addr = address::from_string (argv[1]);
+        udp::endpoint ep (addr, GENESIS_PORT);
+        udp::socket socket (service, ep.protocol ());
+
+        char data[DATA_SIZE];
+        ::memset (data, 0, sizeof (data));
+
+        unsigned short *port = reinterpret_cast <unsigned short *>(&data[0]);
+        *port = RTL_TCP_PORT;
+        *port = boost::asio::detail::socket_ops::host_to_network_short (*port);
+
+        unsigned *type = reinterpret_cast <unsigned *>(
+            &data[genesis::packet::PORT_SIZE]);
+        *type = base ?
+           genesis::station::STATION_TYPE_BASE :
+           genesis::station::STATION_TYPE_ROVER;
+        *type = boost::asio::detail::socket_ops::host_to_network_long (*type);
+
+        std::cout << "Sending "
+                  << (base ? "base" : "rover")
+                  << " ping to Genesis at " << addr
+                  << std::endl;
+
+        socket.send_to (boost::asio::buffer (data, DATA_SIZE), ep);
     }
     catch (std::exception &e) {
         std::cerr << "Exception: " << e.what () << std::endl;

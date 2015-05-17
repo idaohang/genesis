@@ -33,6 +33,10 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/expressions.hpp>
+#include <gflags/gflags.h>
+
+DECLARE_bool (verbose);
+DECLARE_bool (very_verbose);
 
 namespace genesis {
 
@@ -46,7 +50,7 @@ std::ostream& operator<< (std::ostream& strm, genesis::log_severity level) {
     {
         "trace",
         "debug",
-	"info",
+        "info",
         "warning",
         "error",
         "critical"
@@ -72,9 +76,13 @@ void init_logging () {
 
     boost::shared_ptr<sinks::synchronous_sink<sinks::text_ostream_backend> >
        sink = add_console_log();
-#ifndef GENESIS_DEBUG
-    sink->set_filter(severity > debug);
-#endif
+
+    if (!FLAGS_verbose && !FLAGS_very_verbose) {
+        sink->set_filter(severity > debug);
+    }
+    else if (!FLAGS_very_verbose) {
+        sink->set_filter (severity > trace);
+    }
 
     sink->set_formatter (fmt);
     sink->locked_backend ()->auto_flush (true);

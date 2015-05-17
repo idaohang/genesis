@@ -50,7 +50,7 @@ using boost::asio::local::stream_protocol;
 service::service ()
    : acceptor_ (io_service_),
      signal_ (io_service_, SIGCHLD),
-     mcast_socket_ (io_service_),
+     udp_socket_ (io_service_),
      stdin_ (io_service_, ::dup (STDIN_FILENO)),
      stdin_buf_ ((size_t)MAX_STDIN),
      controller_ (boost::make_shared<client_controller> ())
@@ -136,10 +136,6 @@ service::error_type service::setup_listener
       BOOST_LOG_SEV (lg_, critical) << "Bad multicast address.";
       return to_error_condition (ec);
    }
-   if (!addr.is_multicast ()) {
-      BOOST_LOG_SEV (lg_, critical) << "Address is not multicast.";
-      return to_error_condition (ec);
-   }
 
    boost::asio::ip::address listen;
    if (addr.is_v4 ()) {
@@ -151,7 +147,8 @@ service::error_type service::setup_listener
    udp::endpoint ep (listen, GENESIS_PORT);
 
    // open the socket
-   mcast_socket_.open (ep.protocol (), ec);
+   BOOST_LOG_SEV (lg_, trace) << "Opening UDP socket";
+   udp_socket_.open (ep.protocol (), ec);
    if (ec) {
       BOOST_LOG_SEV (lg_, error) <<
          "Failed to open socket: " << ec.message ();
@@ -159,7 +156,8 @@ service::error_type service::setup_listener
    }
 
    // set options
-   mcast_socket_.set_option (udp::socket::reuse_address (true), ec);
+   BOOST_LOG_SEV (lg_, trace) << "Setting reuse address option.";
+   udp_socket_.set_option (udp::socket::reuse_address (true), ec);
    if (ec) {
       BOOST_LOG_SEV (lg_, error) <<
          "Failed to set reuse address socket option: " << ec.message ();
@@ -167,23 +165,28 @@ service::error_type service::setup_listener
    }
 
    // bind
-   mcast_socket_.bind (ep, ec);
+   BOOST_LOG_SEV (lg_, debug) << "Binding to endpoint " << ep;
+   udp_socket_.bind (ep, ec);
    if (ec) {
-      BOOST_LOG_SEV (lg_, error) <<
-         "Failed to bind to endpoint: " << ec.message ();
-      return to_error_condition (ec);
+       BOOST_LOG_SEV (lg_, error) <<
+          "Failed to bind to endpoint" << ep << ": " << ec.message ();
+       return to_error_condition (ec);
    }
 
-   // join the group
-   mcast_socket_.set_option (boost::asio::ip::multicast::join_group (addr), ec);
-   if (ec) {
-      BOOST_LOG_SEV (lg_, error) <<
-         "Failed to join multicast group: " << ec.message ();
-      return to_error_condition (ec);
+   if (addr.is_multicast ()) {
+       // join the group
+       BOOST_LOG_SEV (lg_, debug) << "Address is multicast. Joining group" << addr;
+       udp_socket_.set_option (boost::asio::ip::multicast::join_group (addr), ec);
+       if (ec) {
+           BOOST_LOG_SEV (lg_, error) <<
+              "Failed to join multicast group: " << ec.message ();
+           return to_error_condition (ec);
+       }
    }
+   BOOST_LOG_SEV (lg_, trace) << "UDP socket open and ready.";
 
    // handle reads
-   mcast_socket_.async_receive_from (
+   udp_socket_.async_receive_from (
       boost::asio::buffer (data_, MAX_DATA_LENGTH), sender_endpoint_,
       boost::bind (&service::handle_udp_receive,
                    this,
@@ -212,7 +215,7 @@ void service::handle_udp_receive (const boost::system::error_code &error,
          handle_packet ();
       }
 
-      mcast_socket_.async_receive_from (
+      udp_socket_.async_receive_from (
          boost::asio::buffer (data_, MAX_DATA_LENGTH), sender_endpoint_,
          boost::bind (&service::handle_udp_receive,
                       this,
@@ -260,7 +263,7 @@ void service::prepare_fork () {
 
 void service::child_fork () {
    acceptor_.close ();
-   mcast_socket_.close ();
+   udp_socket_.close ();
    signal_.cancel ();
 
    io_service_.notify_fork (boost::asio::io_service::fork_child);
