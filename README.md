@@ -23,12 +23,59 @@ Start up Genesis with the `genesis` command. If you just built it, it will be in
 
     src/genesis
 
-The following arguments (with defaults) are available:
+The following arguments are available:
 
- - `--gnss_sdr` (/usr/local/bin/gnss-sdr)
- - `--front_end_cal` (/usr/local/bin/front-end-cal)
- - `--config_file` (/usr/local/share/gnss-sdr/conf/gnss-sdr.conf)
- - `--cal_config_file` (/usr/local/share/gnss-sdr/conf/front-end-cal.conf)
+      Flags from /home/anthony/Development/genesis/src/main.cpp:
+    -cal_config_file (The front-end-cal configuration file to use.)
+      type: string default: "/usr/local/share/gnss-sdr/conf/front-end-cal.conf"
+    -config_file (The GNSS-SDR configuration file to use.) type: string
+      default: "/usr/local/share/gnss-sdr/conf/gnss-sdr.conf"
+    -front_end_cal (The front-end-cal executable) type: string
+      default: "/usr/local/bin/front-end-cal"
+    -gnss_sdr (The gnss-sdr executable) type: string
+      default: "/usr/local/bin/gnss-sdr"
+    -listen_address (The address to listen to pings from (can be multicast).)
+      type: string default: "0.0.0.0"
+    -socket_file (The domain socket to open) type: string
+      default: "/var/run/genesis.socket"
+    -verbose (Verbose output) type: bool default: false
+    -very_verbose (Very verbose output) type: bool default: true
+
+
+
+  Flags from src/gflags.cc:
+    -flagfile (load flags from file) type: string default: ""
+    -fromenv (set flags from the environment [use 'export FLAGS_flag1=value'])
+      type: string default: ""
+    -tryfromenv (set flags from the environment if present) type: string
+      default: ""
+    -undefok (comma-separated list of flag names that it is okay to specify on
+      the command line even if the program does not define a flag with that
+      name.  IMPORTANT: flags in this list that have arguments MUST use the
+      flag=value format) type: string default: ""
+
+  Flags from src/gflags_completions.cc:
+    -tab_completion_columns (Number of columns to use in output for tab
+      completion) type: int32 default: 80
+    -tab_completion_word (If non-empty, HandleCommandLineCompletions() will
+      hijack the process and attempt to do bash-style command line flag
+      completion on this value.) type: string default: ""
+
+  Flags from src/gflags_reporting.cc:
+    -help (show help on all flags [tip: all flags can have two dashes])
+      type: bool default: false currently: true
+    -helpfull (show help on all flags -- same as -help) type: bool
+      default: false
+    -helpmatch (show help on modules whose name contains the specified substr)
+      type: string default: ""
+    -helpon (show help on the modules named by this flag value) type: string
+      default: ""
+    -helppackage (show help on all modules in the main package) type: bool
+      default: false
+    -helpshort (show help on only the main module for this program) type: bool
+      default: false
+    -helpxml (produce an xml version of help) type: bool default: false
+    -version (show version and build info and exit) type: bool default: false
 
 ## Connecting Stations
 
