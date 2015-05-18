@@ -246,7 +246,9 @@ void service::handle_packet () {
    // prevents duplicates from being initiated.
    error_type e = controller_->add_station (st);
    if (e) {
-       if (e.value () != station_exists) {
+       if (e.value () != station_exists &&
+           e.value () != station_is_base)
+       {
            BOOST_LOG_SEV (lg_, error)
               << "Error adding new station: " << e.message();
        }
@@ -297,7 +299,8 @@ void service::start_station (const station &st) {
    else {
        // Run GNSS-SDR
        gnss_sdr runner;
-       et = runner.run (st, this, cal.get_IF ());
+       int out;
+       et = runner.run (st, this, out, cal.get_IF ());
        if (et) {
            BOOST_LOG_SEV (lg_, error) << "Failed to start gnss-sdr: "
                                       << et.message ();
@@ -306,6 +309,7 @@ void service::start_station (const station &st) {
        else {
            session_ptr sesh (new session (io_service_,
                                           st,
+                                          out,
                                           controller_));
 
            boost::system::error_code ec;

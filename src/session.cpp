@@ -46,8 +46,10 @@ struct session::impl {
 
    impl (boost::asio::io_service& service,
          const station &st,
+         int outfd,
          controller_ptr controller)
-       : socket_(service), station_ (st), controller_ (controller)
+       : socket_(service), station_ (st), controller_ (controller),
+         outfd_ (outfd)
       {
       }
 
@@ -56,18 +58,21 @@ struct session::impl {
    const station station_;
    controller_ptr controller_;
    logger lg_;
+   int outfd_;
 };
 
 
 session::session(boost::asio::io_service& service,
                  const station &st,
+                 int outfd,
                  controller_ptr controller)
-    : impl_ (new impl (service, st, controller))
+    : impl_ (new impl (service, st, outfd, controller))
 {
 }
 
 session::~session () {
     impl_->controller_->remove_station (impl_->station_);
+    close (impl_->outfd_);
 }
 
 boost::asio::local::stream_protocol::socket &session::socket () {

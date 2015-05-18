@@ -97,6 +97,13 @@ inline bool operator > (const station &l, const station &r) {
 inline bool operator >= (const station &l, const station &r) {
     return l.get_address () >= r.get_address ();
 }
+inline bool operator == (const station &l, const station &r) {
+    return l.get_address () == r.get_address ();
+}
+inline bool operator != (const station &l, const station &r) {
+    return l.get_address () != r.get_address ();
+}
+
 
 }
 

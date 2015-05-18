@@ -48,6 +48,7 @@ public:
 
    error_type run (const station &st,
                    fork_handler *handler,
+                   int &out, // output stream
                    double bias = 0);
 };
 

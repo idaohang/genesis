@@ -64,18 +64,26 @@ static gnss_sdr::error_type write_config (const station &st,
     ofs << ifs.rdbuf ();
 
     // Writing these at the end will override previous definitions
-    fs::path socket_file = fs::canonical (FLAGS_socket_file);
+    fs::path socket_file = FLAGS_socket_file;
     ofs << std::endl << "SignalSource.address=" << st.get_address () << std::endl;
     ofs << "SignalSource.port=" << st.get_port () << std::endl;
     ofs << "InputFilter.IF=" << bias << std::endl;
-    ofs << "OutputFilter.filename=" << socket_file << std::endl;
+    if (socket_file.is_absolute ()) {
+        ofs << "OutputFilter.filename=" << socket_file.c_str () << std::endl;
+    }
+    else {
+        // relative from run directory
+        ofs << "OutputFilter.filename=../" << socket_file.c_str () << std::endl;
+    }
     return gnss_sdr::error_type ();
 }
 
 } // namespace detail
 
+
 gnss_sdr::error_type gnss_sdr::run (const station &st,
                                     fork_handler *handler,
+                                    int &out,
                                     double bias)
 {
     logger lg;
@@ -107,13 +115,13 @@ gnss_sdr::error_type gnss_sdr::run (const station &st,
    args.push_back ("--config_file");
    args.push_back ("gnss-sdr.conf");
    args.push_back ("-log_dir=./");
-   int fd = genesis::fork (handler,
-                           path,
-                           GNSS_SDR_EXECUTABLE,
-                           args);
+   out = genesis::fork (handler,
+                        path,
+                        GNSS_SDR_EXECUTABLE,
+                        args);
 
    BOOST_LOG_SEV (lg, trace) << "gnss-sdr started";
-   close (fd);
+
 
    return et;
 }

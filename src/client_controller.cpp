@@ -114,6 +114,9 @@ client_controller::error_type client_controller::add_station (
    }
    else {
       if (has_base ()) {
+          if (impl_->base_ == st) {
+              return make_error_condition (station_is_base);
+          }
          return make_error_condition (base_already_set);
       }
       if (impl_->rovers_.find (st) != boost::end (impl_->rovers_)) {

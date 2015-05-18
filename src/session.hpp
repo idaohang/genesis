@@ -49,6 +49,7 @@ public:
 
    session(boost::asio::io_service& service,
            const station &st,
+           int outfd,
            controller_ptr controller);
 
    ~session ();
