@@ -48,6 +48,7 @@ enum errorc {
     station_is_rover,
     if_bias_not_found,
     file_not_found,
+    no_base_station,
     max_error
 };
 

@@ -43,7 +43,8 @@ const boost::array <std::string, max_error> error_category::messages_ = {{
         "The specified station is a base station",
         "The specified station is a rover",
         "IF bias not found",
-        "File not found"
+        "File not found",
+	"No base station registered"
     }};
 
 const char *error_category::name () const BOOST_SYSTEM_NOEXCEPT {

@@ -1,6 +1,6 @@
 /*!
- * \file session.hpp
- * \brief Interface for the server-side comms with child process.
+ * \file gps_data.hpp
+ * \brief Structure holds the GPS data of an incoming receiver.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -27,46 +27,25 @@
  * -------------------------------------------------------------------------
  */
 #pragma once
-#ifndef GENESIS_SESSION_HPP
-#define GENESIS_SESSION_HPP
+#ifndef GENESIS_GPS_DATA_HPP
+#define GENESIS_GPS_DATA_HPP
 
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/asio/local/stream_protocol.hpp>
-
+#include "concurrent_dictionary.h"
+#include "gps_ref_time.h"
+#include "gps_utc_model.h"
+#include "gps_iono.h"
+#include "gps_ephemeris.h"
+#include "gps_almanac.h"
 
 namespace genesis {
-
-class client_controller;
-class station;
-
-/*!
- * \brief Class reads incoming data from child process.
- */
-class session : public boost::enable_shared_from_this<session> {
-public:
-   typedef boost::shared_ptr <client_controller> controller_ptr;
-
-   session(boost::asio::io_service& service,
-           const station &st,
-           int outfd,
-           controller_ptr controller);
-
-   ~session ();
-
-   boost::asio::local::stream_protocol::socket &socket ();
-
-   void start();
-
-   void handle_read(const boost::system::error_code& error,
-                    size_t bytes_transferred);
-
-private:
-   void start_read ();
-private:
-   struct impl;
-   boost::shared_ptr <impl> impl_;
+struct gps_data {
+   boost::shared_ptr <concurrent_dictionary <Gps_Ref_Time>> ref_time;
+   boost::shared_ptr <concurrent_dictionary <Gps_Utc_Model>> utc_model;
+   boost::shared_ptr <concurrent_dictionary <Gps_Almanac>> almanac;
+   boost::shared_ptr <concurrent_dictionary <Gps_Iono>> iono;
+   boost::shared_ptr <concurrent_dictionary <Gps_Ephemeris>> ephemeris;
 };
-
 }
-#endif //GENESIS_SESSION_HPP
+
+#endif // #ifndef GENESIS_GPS_DATA_HPP

@@ -1,6 +1,6 @@
 /*!
- * \file session.hpp
- * \brief Interface for the server-side comms with child process.
+ * \file position.hpp
+ * \brief Interface for performing RTK positioning.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -27,46 +27,41 @@
  * -------------------------------------------------------------------------
  */
 #pragma once
-#ifndef GENESIS_SESSION_HPP
-#define GENESIS_SESSION_HPP
+#ifndef GENESIS_POSITION_HPP
+#define GENESIS_POSITION_HPP
 
-#include <boost/enable_shared_from_this.hpp>
+#include <vector>
+#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/asio/local/stream_protocol.hpp>
-
+#include "gnss_sdr_data.h"
+#include "error.hpp"
+#include "log.hpp"
 
 namespace genesis {
 
 class client_controller;
-class station;
+struct gps_data;
 
 /*!
- * \brief Class reads incoming data from child process.
+ * \brief Class performs RTK positioning.
  */
-class session : public boost::enable_shared_from_this<session> {
+class position : boost::noncopyable {
 public:
-   typedef boost::shared_ptr <client_controller> controller_ptr;
 
-   session(boost::asio::io_service& service,
-           const station &st,
-           int outfd,
-           controller_ptr controller);
+   typedef boost::system::error_condition error_type;
+   typedef boost::shared_ptr<client_controller> controller_ptr;
+   typedef boost::shared_ptr<gps_data> gps_data_ptr;
 
-   ~session ();
+   position (controller_ptr controller, gps_data_ptr gps);
 
-   boost::asio::local::stream_protocol::socket &socket ();
-
-   void start();
-
-   void handle_read(const boost::system::error_code& error,
-                    size_t bytes_transferred);
+   error_type rtk_position (const std::vector <gnss_sdr_data> &observables);
 
 private:
-   void start_read ();
-private:
-   struct impl;
-   boost::shared_ptr <impl> impl_;
+   controller_ptr controller_;
+   gps_data_ptr gps_data_;
+   logger lg_;
 };
 
 }
-#endif //GENESIS_SESSION_HPP
+
+#endif // GENESIS_POSITION_HPP

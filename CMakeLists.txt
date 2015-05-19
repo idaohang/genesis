@@ -46,12 +46,12 @@ find_package (Threads)
 set (MY_CXX_FLAGS_DEBUG "-DGENESIS_DEBUG")
 
 if(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
-  set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Wall -Wextra")
+  set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -Wall -Wextra -std=c++11")
   set(MY_CXX_FLAGS_RELEASE "${MY_CXX_FLAGS_RELEASE} -Wno-unused")
 endif(CMAKE_COMPILER_IS_GNUCXX AND NOT WIN32)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -stdlib=libc++")
+  set(MY_CXX_FLAGS "${MY_CXX_FLAGS} -stdlib=libc++ -std=c++11")
   set(MY_CXX_FLAGS_RELEASE "${MY_CXX_FLAGS_RELEASE} -Wno-unused-private-field")
 endif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 

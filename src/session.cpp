@@ -34,8 +34,17 @@
 #include <boost/array.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/asio/placeholders.hpp>
+#include "gps_data.hpp"
+#include "gnss_sdr_data.h"
+#include <boost/thread/mutex.hpp>
 
 namespace genesis {
+
+
+boost::mutex GLOBAL_BASE_STATION_MUTEX;
+std::vector <gnss_sdr_data> GLOBAL_BASE_STATION_OBSERVABLES;
+boost::shared_ptr <concurrent_dictionary <
+   Gps_Ref_Time>> GLOBAL_BASE_STATION_REF_TIME;
 
 struct session::impl {
    typedef session::controller_ptr controller_ptr;
@@ -59,6 +68,8 @@ struct session::impl {
    controller_ptr controller_;
    logger lg_;
    int outfd_;
+
+   boost::shared_ptr <gps_data> gps_data_;
 };
 
 
@@ -89,6 +100,16 @@ void session::handle_read(const boost::system::error_code& error,
     if (!error)
     {
         // TODO: Data to RTKLIB
+       /*
+	 // deserialize observation data
+	 if (station_.get_station_type () == station::STATION_TYPE_BASE) {
+           // set global base observables
+	 }
+         else {
+           // perform RTK
+         }
+	*/
+
         start_read ();
     }
     else {
@@ -109,5 +130,6 @@ void session::start_read () {
                     boost::asio::placeholders::bytes_transferred));
 
 }
+
 
 }

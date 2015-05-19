@@ -16,6 +16,7 @@
 # along with Genesis. If not, see <http://www.gnu.org/licenses/>.
 #
 add_subdirectory (util)
+add_subdirectory (external)
 
 if (MAKE_GENESIS)
 set (GENESIS_SOURCES
@@ -29,10 +30,13 @@ set (GENESIS_SOURCES
   calibrator.cpp
   fork.cpp
   station_config.cpp
-  gnss_sdr.cpp)
+  gnss_sdr.cpp
+  position.cpp)
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/gnss_sdr
+  ${CMAKE_CURRENT_SOURCE_DIR}/external/rtklib
   ${Boost_INCLUDE_DIRS}
   ${GFlags_INCLUDE_DIRS}
   )
@@ -46,6 +50,8 @@ file (GLOB GENESIS_HEADERS "*.hpp")
 add_executable (genesis ${GENESIS_SOURCES} ${GENESIS_HEADERS})
 target_link_libraries (
   genesis
+  gnss_sdr_lib
+  rtk_lib
   ${Boost_LIBRARIES}
   ${GFlags_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
