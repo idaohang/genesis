@@ -31,7 +31,9 @@ set (GENESIS_SOURCES
   fork.cpp
   station_config.cpp
   gnss_sdr.cpp
-  position.cpp)
+  position.cpp
+  base.cpp
+  gps_data.cpp)
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}

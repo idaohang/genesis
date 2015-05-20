@@ -44,6 +44,7 @@ const boost::array <std::string, max_error> error_category::messages_ = {{
         "The specified station is a rover",
         "IF bias not found",
         "File not found",
+        "RTKLIB positioning algorithm failed"
 	"No base station registered"
     }};
 

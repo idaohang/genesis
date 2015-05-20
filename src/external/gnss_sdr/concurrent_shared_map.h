@@ -67,36 +67,18 @@ class concurrent_shared_map
    typedef boost::interprocess::scoped_lock<mutex_type> scoped_lock;
    typedef typename map_type::iterator iterator_type;
 private:
-   struct shm_remove
-   {
-      shm_remove (const std::string &name) : name_ (name)
-      {
-	 shmem_object::remove (name_.c_str ());
-	 mutex_type::remove ((name_ + "_LOCK").c_str ());
-      }
-      ~shm_remove ()
-      {
-	 shmem_object::remove (name_.c_str ());
-	 mutex_type::remove ((name_ + "_LOCK").c_str ());
-      }
 
-   private:
-      std::string name_;
-   };
-
-   shm_remove remover;
    segment_type segment;
    shmem_allocator allocator;
    map_type *the_map;
    mutex_type the_mutex;
 public:
-   concurrent_shared_map (const std::string &name, size_t segment_size)
+   concurrent_shared_map (const std::string &name)
       :
-      remover (name),
-      segment (boost::interprocess::create_only, name.c_str (), segment_size),
+      segment (boost::interprocess::open_only, name.c_str ()),
       allocator (segment.get_segment_manager ()),
       the_map (segment.construct<map_type>("the_map") (std::less<int>(), allocator)),
-      the_mutex (boost::interprocess::create_only, (name + "_LOCK").c_str ())
+      the_mutex (boost::interprocess::open_only, (name + "_LOCK").c_str ())
    {
    }
 

@@ -31,7 +31,6 @@
 #define GENESIS_LOG_HPP
 
 #define BOOST_LOG_DYN_LINK 1
-#include <boost/log/sources/severity_feature.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 

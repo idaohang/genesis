@@ -1,6 +1,6 @@
 /*!
- * \file fork.hpp
- * \brief An interface for forking.
+ * \file base.hpp
+ * \brief Base station global objects.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -26,29 +26,20 @@
  *
  * -------------------------------------------------------------------------
  */
-#pragma once
-#ifndef GENESIS_FORK_HPP
-#define GENESIS_FORK_HPP
 
-#include <vector>
-#include <string>
-
-namespace boost {
-namespace filesystem {
-class path;
-}
-}
+#define GENESIS_BASE_CPP
+#include "base.hpp"
+#include <boost/make_shared.hpp>
+#include "concurrent_shared_map.h"
 
 namespace genesis {
 
-class fork_handler;
+boost::shared_ptr <ref_time_map> get_global_base_station_ref_time () {
+    static boost::shared_ptr <ref_time_map>  global_ =
+       boost::make_shared <concurrent_shared_map<Gps_Ref_Time>>
+       ("genesis.base.gps_ref_time");
 
-// Returns a file handle for a combined stdout/stderr stream.
-int fork (fork_handler *handler,
-          const boost::filesystem::path &dir,
-          const boost::filesystem::path &cmd,
-          const std::vector <std::string> &args);
-
+    return global_;
 }
 
-#endif // GENESIS_FORK_HPP
+}

@@ -1,6 +1,6 @@
 /*!
- * \file fork.hpp
- * \brief An interface for forking.
+ * \file base.hpp
+ * \brief Base station global objects.
  * \author Anthony Arnold, 2015. anthony.arnold(at)uqconnect.edu.au
  *
  * -------------------------------------------------------------------------
@@ -27,28 +27,32 @@
  * -------------------------------------------------------------------------
  */
 #pragma once
-#ifndef GENESIS_FORK_HPP
-#define GENESIS_FORK_HPP
+#ifndef GENESIS_BASE_HPP
+#define GENESIS_BASE_HPP
 
+#include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 #include <vector>
-#include <string>
+#include "gnss_sdr_data.h"
+#include "concurrent_dictionary.h"
+#include "gps_ref_time.h"
 
-namespace boost {
-namespace filesystem {
-class path;
-}
-}
+#ifndef GENESIS_BASE_CPP
+#define BASE_EXTERN extern
+#else
+#define BASE_EXTERN
+#endif
 
 namespace genesis {
 
-class fork_handler;
 
-// Returns a file handle for a combined stdout/stderr stream.
-int fork (fork_handler *handler,
-          const boost::filesystem::path &dir,
-          const boost::filesystem::path &cmd,
-          const std::vector <std::string> &args);
+BASE_EXTERN boost::mutex GLOBAL_BASE_STATION_MUTEX;
+BASE_EXTERN std::vector <gnss_sdr_data> GLOBAL_BASE_STATION_OBSERVABLES;
+
+
+typedef concurrent_dictionary <Gps_Ref_Time> ref_time_map;
+boost::shared_ptr <ref_time_map> get_global_base_station_ref_time ();
 
 }
 
-#endif // GENESIS_FORK_HPP
+#endif // GENESIS_BASE_HPP

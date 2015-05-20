@@ -37,10 +37,12 @@
 #include "error.hpp"
 #include "log.hpp"
 
+
 namespace genesis {
 
 class client_controller;
 struct gps_data;
+struct rtk_t;
 
 /*!
  * \brief Class performs RTK positioning.
@@ -51,8 +53,10 @@ public:
    typedef boost::system::error_condition error_type;
    typedef boost::shared_ptr<client_controller> controller_ptr;
    typedef boost::shared_ptr<gps_data> gps_data_ptr;
+   typedef boost::shared_ptr<rtk_t> rtk_ptr;
 
    position (controller_ptr controller, gps_data_ptr gps);
+   ~position ();
 
    error_type rtk_position (const std::vector <gnss_sdr_data> &observables);
 
@@ -60,6 +64,7 @@ private:
    controller_ptr controller_;
    gps_data_ptr gps_data_;
    logger lg_;
+   rtk_ptr rtk_;
 };
 
 }

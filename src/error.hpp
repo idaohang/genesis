@@ -49,6 +49,7 @@ enum errorc {
     if_bias_not_found,
     file_not_found,
     no_base_station,
+    rtk_failure,
     max_error
 };
 

@@ -30,6 +30,7 @@
 #ifndef GENESIS_GPS_DATA_HPP
 #define GENESIS_GPS_DATA_HPP
 
+#include <string>
 #include <boost/shared_ptr.hpp>
 #include "concurrent_dictionary.h"
 #include "gps_ref_time.h"
@@ -39,12 +40,32 @@
 #include "gps_almanac.h"
 
 namespace genesis {
+class station;
+
 struct gps_data {
-   boost::shared_ptr <concurrent_dictionary <Gps_Ref_Time>> ref_time;
-   boost::shared_ptr <concurrent_dictionary <Gps_Utc_Model>> utc_model;
-   boost::shared_ptr <concurrent_dictionary <Gps_Almanac>> almanac;
-   boost::shared_ptr <concurrent_dictionary <Gps_Iono>> iono;
-   boost::shared_ptr <concurrent_dictionary <Gps_Ephemeris>> ephemeris;
+   gps_data (const station &st);
+
+   typedef concurrent_dictionary <Gps_Ref_Time> ref_time_map;
+   typedef boost::shared_ptr <ref_time_map> ref_time_ptr;
+
+   typedef concurrent_dictionary <Gps_Utc_Model> utc_model_map;
+   typedef boost::shared_ptr <utc_model_map> utc_model_ptr;
+
+   typedef concurrent_dictionary <Gps_Almanac> almanac_map;
+   typedef boost::shared_ptr <almanac_map> almanac_ptr;
+
+   typedef concurrent_dictionary <Gps_Iono> iono_map;
+   typedef boost::shared_ptr <iono_map> iono_ptr;
+
+   typedef concurrent_dictionary <Gps_Ephemeris> ephemeris_map;
+   typedef boost::shared_ptr <ephemeris_map> ephemeris_ptr;
+
+   std::string name;
+   ref_time_ptr ref_time;
+   utc_model_ptr utc_model;
+   almanac_ptr almanac;
+   iono_ptr iono;
+   ephemeris_ptr ephemeris;
 };
 }
 
