@@ -30,10 +30,10 @@
 #include "station.hpp"
 #include "concurrent_shared_map.h"
 
-static std::string shared_name (const genesis::station &st, const char *suffix) {
+static std::string shared_name (const genesis::station &st) {
     return st.get_type () == genesis::station::STATION_TYPE_BASE ?
-       ( std::string ("genesis.base") + suffix ) :
-       ( std::string ("genesis") + st.get_address () + "." + suffix );
+       ( std::string ("genesis.base") ) :
+       ( std::string ("genesis") + st.get_address () );
 }
 
 namespace genesis {
@@ -43,26 +43,61 @@ enum {
 };
 
 gps_data::gps_data (const station &st)
-    : name (st.get_address ()),
-      ref_time (
-          new concurrent_shared_map<Gps_Ref_Time> (
-              shared_name (st, "gps_ref_time"))),
-      utc_model (
-          new concurrent_shared_map<Gps_Utc_Model> (
-              shared_name (st, "gps_utc_model"))),
-
-      almanac (
-          new concurrent_shared_map<Gps_Almanac> (
-              shared_name (st, "gps_almanac"))),
-
-      iono (
-          new concurrent_shared_map<Gps_Iono> (
-              shared_name (st, "gps_iono"))),
-
-      ephemeris (
-          new concurrent_shared_map<Gps_Ephemeris> (
-              shared_name (st, "gps_ephemeris")))
+    :
+    shared_name_(shared_name (st)),
+    name_ (st.get_address ())
 {
 }
+
+
+const std::string &gps_data::name () const {
+    return name_;
+}
+
+gps_data::ref_time_ptr gps_data::ref_time () {
+    if (!ref_time_) {
+        ref_time_.reset (
+            new concurrent_shared_map<Gps_Ref_Time> (
+                shared_name_ + ".gps_ref_time"));
+    }
+    return ref_time_;
+}
+
+gps_data::utc_model_ptr gps_data::utc_model () {
+    if (!utc_model_) {
+        utc_model_.reset (
+            new concurrent_shared_map<Gps_Utc_Model> (
+                shared_name_ + ".gps_utc_model"));
+    }
+    return utc_model_;
+}
+
+gps_data::almanac_ptr gps_data::almanac () {
+    if (!almanac_) {
+        almanac_.reset (
+            new concurrent_shared_map<Gps_Almanac> (
+                shared_name_ + ".gps_almanac"));
+    }
+    return almanac_;
+}
+
+gps_data::iono_ptr gps_data::iono () {
+    if (!iono_) {
+        iono_.reset (
+            new concurrent_shared_map<Gps_Iono> (
+                shared_name_ + ".gps_iono"));
+    }
+    return iono_;
+}
+
+gps_data::ephemeris_ptr gps_data::ephemeris () {
+    if (!ephemeris_) {
+        ephemeris_.reset (
+            new concurrent_shared_map<Gps_Ephemeris> (
+                shared_name_ + ".gps_ephemeris"));
+    }
+    return ephemeris_;
+}
+
 
 }

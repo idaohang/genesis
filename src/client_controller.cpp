@@ -35,6 +35,7 @@
 #include <boost/thread/lock_guard.hpp>
 #include <set>
 #include "station.hpp"
+#include "concurrent_shared_map.h"
 
 namespace genesis {
 
@@ -78,7 +79,11 @@ private:
 struct client_controller::impl {
    station base_;
    std::set<station> rovers_;
+   client_controller::observable_vector base_observables_;
+   client_controller::ref_time_ptr base_ref_time_;
+
    mutable boost::recursive_mutex mutex_;
+
    typedef boost::lock_guard <boost::recursive_mutex> lock;
 };
 
@@ -125,6 +130,8 @@ client_controller::error_type client_controller::add_station (
       }
 
       impl_->base_ = st;
+      impl_->base_observables_.clear ();
+      impl_->base_ref_time_.reset ();
    }
 
    return error_type ();
@@ -152,7 +159,31 @@ bool client_controller::has_base () const {
 client_controller::error_type client_controller::reset_base () {
    impl::lock lock (impl_->mutex_);
    impl_->base_ = station ();
+   impl_->base_observables_.clear ();
+   impl_->base_ref_time_.reset ();
    return error_type ();
+}
+
+client_controller::ref_time_ptr
+client_controller::base_ref_time () const {
+   impl::lock lock (impl_->mutex_);
+   if (!impl_->base_ref_time_) {
+       impl_->base_ref_time_.reset (
+           new concurrent_shared_map<Gps_Ref_Time> (
+               "GNSS-SDR.base.gps_ref_time"));
+   }
+   return impl_->base_ref_time_;
+}
+
+client_controller::observable_vector
+client_controller::base_observables () const {
+   impl::lock lock (impl_->mutex_);
+   return impl_->base_observables_;
+}
+
+void client_controller::set_base_observables (observable_vector v) {
+   impl::lock lock (impl_->mutex_);
+   impl_->base_observables_ = v;
 }
 
 }

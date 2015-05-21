@@ -60,12 +60,22 @@ struct gps_data {
    typedef concurrent_dictionary <Gps_Ephemeris> ephemeris_map;
    typedef boost::shared_ptr <ephemeris_map> ephemeris_ptr;
 
-   std::string name;
-   ref_time_ptr ref_time;
-   utc_model_ptr utc_model;
-   almanac_ptr almanac;
-   iono_ptr iono;
-   ephemeris_ptr ephemeris;
+
+   const std::string &name () const;
+   ref_time_ptr ref_time ();
+   utc_model_ptr utc_model ();
+   almanac_ptr almanac ();
+   iono_ptr iono ();
+   ephemeris_ptr ephemeris ();
+
+private:
+   std::string shared_name_;
+   std::string name_;
+   ref_time_ptr ref_time_;
+   utc_model_ptr utc_model_;
+   almanac_ptr almanac_;
+   iono_ptr iono_;
+   ephemeris_ptr ephemeris_;
 };
 }
 

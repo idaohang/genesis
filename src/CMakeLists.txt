@@ -32,7 +32,6 @@ set (GENESIS_SOURCES
   station_config.cpp
   gnss_sdr.cpp
   position.cpp
-  base.cpp
   gps_data.cpp)
 
 include_directories (

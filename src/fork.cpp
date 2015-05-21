@@ -48,8 +48,8 @@ int fork (fork_handler *handler,
     if (pid == 0) {
         close(p[0]);
 
-        while ((dup2(p[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
 #ifndef GENESIS_DEBUG
+        while ((dup2(p[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
         while ((dup2(p[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
 #endif
         close(p[1]);

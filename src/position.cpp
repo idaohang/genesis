@@ -39,7 +39,6 @@
 #include "log.hpp"
 #include "gps_data.hpp"
 #include "client_controller.hpp"
-#include "base.hpp"
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 #define TWO_PI 6.28318530718
@@ -113,31 +112,35 @@ position::error_type position::rtk_position (
         return make_error_condition (no_base_station);
     }
 
-    // observation data
+    // Copy GNSS-SDR Observables to RTKLIB observables (observations)
     // get_obs pushes in PRN order
     // rtklib requires in order of receiver, followed by satellite
+
+    // BASE STATION OBSERVABLES
     std::vector <obsd_t> observations;
     Gps_Ref_Time ref_time;
-    get_global_base_station_ref_time ()->read (0, ref_time);
-    {
-        boost::unique_lock<boost::mutex> lck (GLOBAL_BASE_STATION_MUTEX);
-        detail::get_obs (GLOBAL_BASE_STATION_OBSERVABLES,
-                         true,
-                         ref_time,
-                         observations);
-    }
+    controller_->base_ref_time ()->read (0, ref_time);
+    const std::vector <gnss_sdr_data> &base_observables =
+       controller_->base_observables ();
 
-    gps_data_->ref_time->read (0, ref_time);
+    detail::get_obs (base_observables,
+                     true,
+                     ref_time,
+                     observations);
+
+    // ROVER OBSERVABLES
+    gps_data_->ref_time()->read (0, ref_time);
     detail::get_obs (observables, false, ref_time, observations);
 
-    // set up navigation data
+    // Set up navigation data
     nav_t nav;
     memset (&nav, 0, sizeof (nav));
 
-    std::vector <eph_t> ephemeris;
-    std::map <int, Gps_Ephemeris> ephms = gps_data_->ephemeris->get_map_copy ();
-
     // Convert GNSS-SDR ephemeris to RTKLIB ephemeris
+    std::vector <eph_t> ephemeris;
+    std::map <int, Gps_Ephemeris> ephms =
+       gps_data_->ephemeris()->get_map_copy ();
+
     typedef  std::map <int, Gps_Ephemeris>::value_type eph_pair;
     BOOST_FOREACH (const eph_pair &e, ephms) {
         eph_t eph;
@@ -203,7 +206,7 @@ position::error_type position::rtk_position (
 
     // Convert GNSS-SDR almanac objects to RTKLIB almanacs
     std::vector <alm_t> almanac;
-    std::map <int, Gps_Almanac> alms = gps_data_->almanac->get_map_copy ();
+    std::map <int, Gps_Almanac> alms = gps_data_->almanac()->get_map_copy ();
     typedef  std::map <int, Gps_Almanac>::value_type alm_pair;
     BOOST_FOREACH (const alm_pair &a, alms) {
         alm_t alm;
@@ -234,7 +237,7 @@ position::error_type position::rtk_position (
 
     // Convert UTC time params from GNSS-SDR to RTKLIB
     Gps_Utc_Model utc;
-    if (gps_data_->utc_model->read (0, utc)) {
+    if (gps_data_->utc_model()->read (0, utc)) {
         if (utc.valid) {
             nav.utc_gps[0] = utc.d_A0;
             nav.utc_gps[1] = utc.d_A1;
@@ -246,7 +249,7 @@ position::error_type position::rtk_position (
 
     // Convert ionospheric model from GNSS-SDR to RTKLIB
     Gps_Iono iono;
-    if (gps_data_->iono->read (0, iono)) {
+    if (gps_data_->iono()->read (0, iono)) {
         if (iono.valid) {
             nav.ion_gps[0] = iono.d_alpha0;
             nav.ion_gps[1] = iono.d_alpha1;
@@ -266,13 +269,13 @@ position::error_type position::rtk_position (
     }
 
     // Got valid position
-    // TODO: Put this somewhere else
+    // TODO: Print to KML somewhere
     BOOST_LOG_SEV (lg_, debug)
        << "Got valid position for station "
-       << gps_data_->name;
+       << gps_data_->name();
 
     BOOST_LOG_SEV (lg_, info)
-       << gps_data_->name << ": ("
+       << gps_data_->name() << ": ("
        << rtk_->sol.rr[0] << ", "
        << rtk_->sol.rr[1] << ", "
        << rtk_->sol.rr[2] << ") ("

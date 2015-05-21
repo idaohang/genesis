@@ -30,17 +30,17 @@
 #include "client_controller.hpp"
 #include "station.hpp"
 #include "log.hpp"
+#include "position.hpp"
+#include "gps_data.hpp"
 #include <boost/bind.hpp>
 #include <boost/array.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/asio/placeholders.hpp>
 #include <boost/asio/streambuf.hpp>
+//#include <boost/asio/read.hpp>
 #include <boost/move/core.hpp>
-#include "gps_data.hpp"
-#include "base.hpp"
-#include "position.hpp"
 #include <boost/thread/mutex.hpp>
-#include <boost/archive/binary_iarchive.hpp>
+//#include <boost/archive/binary_iarchive.hpp>
 
 namespace genesis {
 
@@ -56,7 +56,7 @@ struct session::impl {
          int outfd,
          controller_ptr controller)
        : socket_(service),
-         mut_buf_(buffer_.prepare (1024)),
+         mut_buf_(buffer_.prepare (sizeof (gnss_sdr_data) * 32)),
          station_ (st),
          controller_ (controller),
          outfd_ (outfd),
@@ -68,6 +68,7 @@ struct session::impl {
    boost::asio::local::stream_protocol::socket socket_;
    boost::asio::streambuf buffer_;
    boost::asio::streambuf::mutable_buffers_type mut_buf_;
+   //boost::array <char, sizeof (gnss_sdr_data)> buffer_;
    const station station_;
    controller_ptr controller_;
    logger lg_;
@@ -99,7 +100,7 @@ void session::start() {
 }
 
 void session::handle_read(const boost::system::error_code& err,
-                          size_t /* bytes_transferred */)
+                          size_t /* bytes_transferred */ )
 {
     if (!err)
     {
@@ -108,32 +109,46 @@ void session::handle_read(const boost::system::error_code& err,
 
         // deserialize observation data
         try {
-            std::istream is (&impl_->buffer_);
-            boost::archive::binary_iarchive ia (is);
+            //std::istream is (&impl_->buffer_);
+            //boost::archive::binary_iarchive ia (is);
 
-            while (impl_->buffer_.size () > sizeof (gnss_sdr_data)) {
+            while (impl_->buffer_.size () >= sizeof (gnss_sdr_data)) {
                 gnss_sdr_data dat;
-                ia >> dat;
+                impl_->buffer_.sgetn (reinterpret_cast <char *> (&dat),
+                                      sizeof (gnss_sdr_data));
+                //memcpy (&dat, &impl_->buffer_[0], sizeof (gnss_sdr_data));
+                //ia >> dat;
                 observables.push_back (boost::move (dat));
             }
         }
         catch ( const std::exception &ex ) {
-            BOOST_LOG_SEV (impl_->lg_, error) << ex.what ();
+            BOOST_LOG_SEV (impl_->lg_, error)
+               << "Deserialization error: " << ex.what ();
             // clear out buffer
-            impl_->buffer_.consume (impl_->buffer_.size ());
+            //impl_->buffer_.consume (impl_->buffer_.size ());
+            start_read ();
             return;
         }
 
-        if (impl_->station_.get_type () == station::STATION_TYPE_BASE) {
-            // set global base observables
-            boost::mutex::scoped_lock lck (GLOBAL_BASE_STATION_MUTEX);
-            GLOBAL_BASE_STATION_OBSERVABLES = observables;
-        }
-        else {
-            // perform RTK
-            impl_->pos_.rtk_position (observables);
-        }
+        if (observables.size () > 0) {
+            BOOST_LOG_SEV (impl_->lg_, trace)
+               << "Received " << observables.size () << " observables "
+               << "from GNSS-SDR@" << impl_->station_.get_address ();
 
+            if (impl_->station_.get_type () == station::STATION_TYPE_BASE) {
+                // set global base observables
+                impl_->controller_->set_base_observables (observables);
+            }
+            else {
+                // perform RTK
+                boost::system::error_condition e =
+                   impl_->pos_.rtk_position (observables);
+                if (e) {
+                    BOOST_LOG_SEV (impl_->lg_, debug)
+                       << "RTK positioning failed: " << e.message ();
+                }
+            }
+        }
 
         start_read ();
     }
@@ -147,8 +162,11 @@ void session::handle_read(const boost::system::error_code& err,
 
 
 void session::start_read () {
-    impl_->socket_.async_read_some(
+    impl_->socket_.async_read_some (
+        //boost::asio::async_read (
+        //impl_->socket_,
         boost::asio::buffer (impl_->mut_buf_),
+        //boost::asio::buffer (impl_->buffer_),
         boost::bind(&session::handle_read,
                     shared_from_this(),
                     boost::asio::placeholders::error,

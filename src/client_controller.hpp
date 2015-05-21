@@ -34,6 +34,10 @@
 #include <boost/move/core.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/shared_ptr.hpp>
+#include "concurrent_dictionary.h"
+#include "gnss_sdr_data.h"
+#include "gps_ref_time.h"
+#include <vector>
 
 namespace genesis {
 
@@ -46,6 +50,9 @@ class station;
 class client_controller {
 public:
    typedef boost::system::error_condition error_type;
+   typedef concurrent_dictionary <Gps_Ref_Time> ref_time_map;
+   typedef boost::shared_ptr<ref_time_map> ref_time_ptr;
+   typedef std::vector<gnss_sdr_data> observable_vector;
 private:
    BOOST_MOVABLE_BUT_NOT_COPYABLE (client_controller)
 
@@ -60,6 +67,12 @@ public:
    bool has_base () const;
 
    error_type reset_base ();
+
+   ref_time_ptr base_ref_time () const;
+
+   observable_vector base_observables () const;
+
+   void set_base_observables (observable_vector v);
 
 private:
    struct impl;

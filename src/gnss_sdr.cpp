@@ -75,6 +75,15 @@ static gnss_sdr::error_type write_config (const station &st,
         // relative from run directory
         ofs << "OutputFilter.filename=../" << socket_file.c_str () << std::endl;
     }
+
+    ofs << "GNSS-SDR.shared_mem=true" << std::endl;
+    if (st.get_type () == station::STATION_TYPE_BASE) {
+        ofs << "GNSS-SDR.shared_mem_prefix=genesis.base" << std::endl;
+    }
+    else {
+        ofs << "GNSS-SDR.shared_mem_prefix=genesis."
+            << st.get_address () << std::endl;
+    }
     return gnss_sdr::error_type ();
 }
 
