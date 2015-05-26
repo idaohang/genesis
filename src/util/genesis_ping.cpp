@@ -50,7 +50,7 @@ int main (int argc, char *argv[]) {
         }
         bool base = false;
         if (argc == 3) {
-            std::string ("b") == argv[2];
+            base = std::string ("b") == argv[2];
         }
 
         boost::asio::io_service service;
