@@ -40,6 +40,7 @@
 #include "gps_data.hpp"
 #include "client_controller.hpp"
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #define TWO_PI 6.28318530718
 
@@ -49,6 +50,7 @@ struct rtk_t : ::rtk_t {};
 
 namespace detail {
 
+// convert to GPS time
 void to_gtime_t (double gps_t, int week, gtime_t &out) {
     // convert to time since gps rollover
     double ms = (gps_t + 604800 * static_cast<double>(week % 1024)) * 1000;
@@ -59,6 +61,7 @@ void to_gtime_t (double gps_t, int week, gtime_t &out) {
     out.sec = t.fractional_seconds ();
 }
 
+// Convert observables
 void get_obs (const std::vector <gnss_sdr_data> &observables,
               bool base,
               const Gps_Ref_Time &ref_time,
@@ -84,6 +87,42 @@ void get_obs (const std::vector <gnss_sdr_data> &observables,
     BOOST_FOREACH (const obs_pair pair, rtkobs) {
         out.push_back (pair.second);
     }
+}
+
+// Convert cartesion coordinates (x,y,z) to geographical (lat,long,height)
+// Uses World Geodetic System 1984
+boost::tuple <double, double, double> to_geo (double X, double Y, double Z) {
+    // From GNSS-SDR (gps_l1_ca_ls_pvt.cc)
+    const double a = 6378137.0;
+    const double f = 1.0 / 298.257223563;
+
+    double lambda  = atan2(Y,X);
+    double ex2 = (2.0 - f) * f / ((1.0 - f) * (1.0 - f));
+    double c = a * sqrt(1.0 + ex2);
+    double phi = atan(Z / ((sqrt(X * X + Y * Y) * (1.0 - (2.0 - f)) * f)));
+
+    double h = 0.1;
+    double oldh = 0.0;
+    double N;
+    int iterations = 0;
+    do
+    {
+        oldh = h;
+        N = c / sqrt(1 + ex2 * (cos(phi) * cos(phi)));
+        phi = atan(Z / ((sqrt(X*X + Y*Y) * (1.0 - (2.0 -f) * f * N / (N + h) ))));
+        h = sqrt(X * X + Y * Y) / cos(phi) - N;
+        iterations = iterations + 1;
+        if (iterations > 100)
+        {
+            break;
+        }
+    }
+    while (std::abs(h - oldh) > 1.0e-12);
+
+    double lat = phi * 180.0 / GPS_PI;
+    double lon = lambda * 180.0 / GPS_PI;
+
+    return boost::make_tuple (lat, lon, h);
 }
 
 } // namespace detail
@@ -274,23 +313,16 @@ position::error_type position::rtk_position (
        << "Got valid position for station "
        << gps_data_->name();
 
-    BOOST_LOG_SEV (lg_, info)
-       << gps_data_->name() << ": ("
-       << rtk_->sol.rr[0] << ", "
-       << rtk_->sol.rr[1] << ", "
-       << rtk_->sol.rr[2] << ") ("
-       << rtk_->sol.rr[3] << ", "
-       << rtk_->sol.rr[4] << ", "
-       << rtk_->sol.rr[5] << ")";
+    // Convert to geographical
+    boost::tuple <double, double, double> geo = detail::to_geo (rtk_->sol.rr[0],
+                                                                rtk_->sol.rr[1],
+                                                                rtk_->sol.rr[2]);
 
-    BOOST_LOG_SEV (lg_, info)
-       << "Base: ("
-       << rtk_->rb[0] << ", "
-       << rtk_->rb[1] << ", "
-       << rtk_->rb[2] << ") ("
-       << rtk_->rb[3] << ", "
-       << rtk_->rb[4] << ", "
-       << rtk_->rb[5] << ")";
+    BOOST_LOG (lg_)
+       << gps_data_->name () << ": "
+       << "Lat=" << boost::get<0> (geo) << " deg "
+       << "Long=" << boost::get<1> (geo) << " deg "
+       << "Height=" << boost::get<2> (geo) << " m";
 
     return error_type ();
 }
